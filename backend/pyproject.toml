@@ -1,0 +1,22 @@
+# Tool settings for the backend. Dependencies live in requirements*.txt (pinned).
+[project]
+name = "trade-doc-pipeline"
+version = "0.1.0"
+description = "Multi-agent trade document pipeline (GoComet DAW, Part 1)"
+requires-python = ">=3.14"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# Tests marked `live` call the real Gemini API and spend quota.
+# They are skipped by default; run them with: pytest -m live
+markers = ["live: calls the real Gemini API (spends free-tier quota)"]
+addopts = "-m 'not live'"
+
+[tool.ruff]
+line-length = 100
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+# E/F: pycodestyle + pyflakes, I: import order, B: bugbear, UP: modern syntax, SIM: simplifications
+select = ["E", "F", "I", "B", "UP", "SIM"]

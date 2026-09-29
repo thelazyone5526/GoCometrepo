@@ -1,0 +1,7 @@
+# Runtime dependencies plus test and lint tools.
+-r requirements.txt
+
+pytest==9.1.1
+ruff==0.16.9
+# Used by FastAPI's TestClient
+httpx==0.28.1

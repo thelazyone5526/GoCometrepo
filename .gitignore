@@ -1,0 +1,23 @@
+# Local runtime data: databases, checkpoints, uploads. Delete the folder to reset.
+data/
+
+# Secrets. Only the example file is committed.
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+frontend/dist/
+
+# OS clutter
+.DS_Store
+Thumbs.db
