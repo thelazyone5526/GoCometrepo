@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "doc_id": "E5-C0",
+  "file": "E5-C0.pdf",
+  "description": "Eval grid: V1 with planted error E5; clean text PDF",
+  "version": "E5",
+  "base_version": "V1",
+  "condition": "C0",
+  "condition_description": "Clean: the generated text PDF, with a real text layer",
+  "degradation": null,
+  "customer_id": "acme",
+  "doc_type": "commercial_invoice",
+  "planted_errors": [
+    {
+      "code": "E5",
+      "field": "invoice_number",
+      "description": "Invoice number is missing"
+    }
+  ],
+  "fields": {
+    "consignee": {
+      "printed": "ACME Electronics Pte. Ltd.",
+      "value": "ACME Electronics Pte. Ltd.",
+      "verdict": "match"
+    },
+    "hs_code": {
+      "printed": "8471.30",
+      "value": "847130",
+      "verdict": "match"
+    },
+    "port_of_loading": {
+      "printed": "SHANGHAI, CHINA",
+      "value": "Shanghai",
+      "verdict": "match"
+    },
+    "port_of_discharge": {
+      "printed": "SINGAPORE",
+      "value": "Singapore",
+      "verdict": "match"
+    },
+    "incoterms": {
+      "printed": "CIF Singapore",
+      "value": "CIF",
+      "verdict": "match"
+    },
+    "goods_description": {
+      "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+      "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+      "verdict": "match"
+    },
+    "gross_weight": {
+      "printed": "862.40 KGS",
+      "value": {
+        "amount": 862.4,
+        "unit": "KG"
+      },
+      "verdict": "match"
+    },
+    "invoice_number": {
+      "printed": null,
+      "value": null,
+      "verdict": "mismatch"
+    }
+  },
+  "acceptable_outcomes": [
+    "amendment_request",
+    "human_review"
+  ]
+}

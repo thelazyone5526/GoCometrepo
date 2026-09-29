@@ -2,9 +2,11 @@
 
 Read this at the start of every phase chat. Update it at the end of every phase.
 
+Current: **Phase 2 done.** Next: Phase 3 (page preparation). See "For Phase 3" at the end.
+
 ## Phase 1: Setup and spikes
 
-Status: **done, 2026-09-30.** One gate item is still open: the free-tier limits, which Ansh reads in AI Studio. Not committed yet (the commit waits for Ansh's approval, and git needs an identity first, see "Open reminders").
+Status: **done, 2026-09-30.** Committed on `part1` as `18060d2` and pushed to GitHub (`origin/part1`, tracking set up). One gate item is still open: the free-tier limits, which Ansh reads in AI Studio.
 
 ### What was built
 
@@ -83,7 +85,7 @@ npm run lint     # oxlint
 - **Rotate the Gemini key.** It was pasted into chat, so it's in the chat history. Delete it in AI Studio, create a new one, and put the new one straight into `backend/.env`.
 
 - **Git identity:** set for this repo only, at Ansh's request: `user.name` = `thelazyone5526`, `user.email` = Ansh's GitHub no-reply address (keeps his real email out of the public history). Ready to commit.
-- **First commit:** `main` has no commits. After approval, the Phase 1 commit goes on `part1`. Merging into `main` at the end will just fast-forward `main` to `part1`.
+- **Branches:** `part1` holds the Phase 1 commit. `main` still has no commits, so merging at the end just moves `main` up to `part1`. `part1` is pushed to GitHub, and pushes need Ansh's go-ahead. GitHub sign-in is saved by Git Credential Manager, so later pushes won't ask again.
 - **PRD numbers (due in Phase 13):** decide or replace the five placeholder numbers in the PRD (design §10.1): remove "40–60 document sets a day"; replace 0.85 with the tuned threshold and its rule; check the 6-call cap against the call log; switch the eval to the 28-document grid; rethink the "40% touchless" pass mark; replace the other targets with measured values plus a margin.
 
 ### For Phase 2
@@ -99,3 +101,105 @@ npm run lint     # oxlint
 - 3.8 Flash thinks by default. Test a lower thinking budget via `thinking_config` to cut cost and latency.
 - The SDK prints an "automatic function calling" warning on every call. It's harmless, since we pass no tools. It can be silenced by disabling AFC in the config.
 - The SDK retries on its own (it uses tenacity internally). Our wrapper also retries, so turn the SDK's retries off to avoid retrying twice.
+
+## Phase 2: Sample documents and answer files
+
+Status: **done, 2026-09-30.** Gate passed: Ansh reviewed the clean and messy submission samples and approved them. Committed on `part1` as "Phase 2: sample documents and answer files" (together with Phase 1's leftover `progress.md` edit) and pushed to `origin/part1`. Run `git log` for the commit hash.
+
+### What was built
+
+- `backend/rules/acme.yaml`: ACME's rules, copied from design §3.4. Data only for now; the loader comes in Phase 6.
+- `samples/` (a package at the repo root):
+  - `shipments.py`: the ground truth.
+    - V1: Shanghai, HS 8471.30, laptops.
+    - V2: Yantian, HS 8471.60, keyboard and mouse sets.
+    - E1–E5: V1 with one planted error each (HS 8504.40; "ACEM Electronics Pte. Ltd."; FOB Shanghai; weights in LBS; blank invoice number).
+    - E1E4: V1 with two errors, used only for submission sample 2.
+    - Distractors on every invoice: shipper, notify party, net weight next to gross weight, vessel, container number (valid ISO 6346 check digit), PO number, final destination, shipping marks.
+  - `render.py`: a one-page A4 commercial invoice drawn with fpdf2, with a real text layer. The creation date is fixed, so the bytes repeat. It refuses any value that would overflow its box, so every printed value stays on one line.
+  - `degrade.py`: the scan conditions, made with PyMuPDF, OpenCV and Pillow.
+    - C1: rotated 2–4°, grayscale, 200 DPI.
+    - C2: Gaussian blur, sigma 1.9–2.3 px, grayscale, 200 DPI.
+    - C3: colour, a red RECEIVED stamp over the end of the gross weight, then 100 DPI with noise, speckles and JPEG quality 55.
+
+    Each scan is wrapped in an image-only PDF.
+  - `answers.py`: the answer-file schema (Pydantic). Its validators enforce the outcome rules: an error document can only list amendment_request or human_review, and a mismatch must line up with a planted error.
+  - `generate.py`: the one command.
+- Generated and committed:
+  - `samples/grid/`: 28 PDFs;
+  - `samples/submission/`: `01-clean-correct` (V1-C0), `02-clean-two-errors` (E1E4-C0) and `03-messy-scan` (V2-C3);
+  - `samples/jpg/`: `V1-C1.jpg`;
+  - one `.answer.json` beside each document.
+
+  That's 32 documents and 6.6 MB in total.
+- `.gitattributes` at the repo root marks PDFs and images as binary and answer files as LF, so Windows autocrlf can't corrupt them.
+- `backend/tests/test_samples.py` (50 tests).
+- `backend/pyproject.toml`: pytest `pythonpath` and ruff `src` now include `..`, so tests import `samples` and ruff treats it as first-party.
+
+### Commands (Phase 2 additions)
+
+```
+# From the repo root: regenerate every sample and answer file (about 3 s)
+backend\.venv\Scripts\python -m samples.generate
+backend\.venv\Scripts\python -m samples.generate --out <dir>   # somewhere else
+
+# From backend/: lint and format now cover samples/ too
+.venv\Scripts\ruff check . ..\samples --config pyproject.toml
+.venv\Scripts\ruff format --check . ..\samples --config pyproject.toml
+```
+
+### Verified
+
+- `pytest`: 51 passed (50 new, plus health) in 2.3 s. The tests check that:
+  - every answer file passes its schema;
+  - the schema rejects an error document that allows auto_approve;
+  - each committed answer equals one rebuilt from `shipments.py`;
+  - each of E1–E5 differs from V1 in exactly one field, the planted one, and E1E4 in exactly its two;
+  - the expected verdicts agree with `acme.yaml` for every rule code can settle;
+  - PyMuPDF finds a text layer (at least 30 characters) only on C0 files, and exactly 0 characters on every scan;
+  - every printed value appears exactly in the C0 text layer;
+  - E5 keeps the "Invoice No." label but has no invoice number;
+  - building a document twice gives identical bytes (one per condition);
+  - the JPG is byte-identical to the image inside `grid/V1-C1.pdf`;
+  - every file is 1 page and under 10 MB.
+- Ruff check and format, over backend and samples (21 files): clean.
+- Reproducibility: a fresh `generate()` into a scratch folder matched all 64 committed files byte for byte.
+- Visual check: I rendered and inspected the three submission samples. Sample 1 shows the correct V1. Sample 2 shows 8504.40 and weights in LBS. Sample 3 is an image-only scan whose stamp covers ".00 KGS" of the gross weight.
+- A throwaway OCR check with RapidOCR on six scans (V1-C1, V1-C2, E1-C2, V1-C3, V2-C3, E4-C3), since deleted:
+  - the invoice number was read at confidence 1.0 on all six;
+  - mean line confidence was 0.977–0.993, and the lowest single line was 0.574;
+  - the stamp changed the gross-weight reading on C3: "3,120.00KGS" on V2-C3, and no "LBS" reading on E4-C3.
+
+### Decisions and deviations (design updated to match)
+
+- **Folder layout:** `samples/grid/`, `samples/submission/`, `samples/jpg/`, each document with `<name>.answer.json` beside it. Doc IDs are `<version>-<condition>`, plus `V1-C1-JPG` for the JPG.
+- **Two-error sample = E1 + E4** (HS code, LBS). Both are settled by plain code, so the demo's amendment draft doesn't depend on the LLM's name judgement.
+- **JPG = V1-C1**, the same scan as the grid PDF.
+- **Stamp placement:** over the end of the gross weight, and never over the invoice number, which Phase 3's OCR test needs.
+- **Answer-file contents beyond the plan:** the exact printed text per field (for grounding tests) and the exact degradation parameters (for example the C1 skew angle, for Phase 3's straightening test).
+- **Outcome vocabulary:** answer files use §3.5's `auto_approve`, `human_review`, `amendment_request`. §4 uses different past-tense names. Logged as an open item in design §10.1.
+- **Canonical values** that later normalisers must produce are listed in design §10.1.
+- **E4:** the net weight is also printed in LBS, as a real supplier would. It isn't one of the 8 fields, so E4 still differs from V1 in exactly one field.
+- **Every document carries a footer** saying it's a fictional test document.
+- Design doc: item 13 ticked; items 1, 3 and 12 say "three submission samples" instead of "both samples"; §9 layout updated; two §10.1 open items added.
+
+### Known issues
+
+- No real failures this phase, so no failure-log entries. The renderer's overflow guard fired once, as designed, on a box label that was too long. The label was shortened.
+- Byte-identical regeneration is verified on this machine. On another OS, OpenCV or zlib builds could produce slightly different scan or PDF bytes. The tests only compare a fresh build with itself, and the answer files as parsed data, so they pass anywhere.
+
+### Open reminders
+
+- Everything in Phase 1's list still stands: rotate the Gemini key, read the free-tier limits, and the PRD numbers in Phase 13. On the PRD: its §6 still says "24 synthetic documents, half with seeded errors". The grid is now 28 documents, 20 of them with errors.
+
+### For Phase 3
+
+- Test inputs:
+  - C0 text layer: any `samples/grid/*-C0.pdf`.
+  - Scans: C1, C2 and C3 in `samples/grid/`.
+  - Image upload: `samples/jpg/V1-C1.jpg`.
+- The expected printed strings are in each answer file (`fields.<name>.printed`). Skip E5 in the "OCR finds the invoice number" test, because its value is null.
+- The C1 skew angle is `degradation.rotation_deg` in the answer file, counter-clockwise positive as in OpenCV (`getRotationMatrix2D`). Use it for the ±0.5° straightening test.
+- C3 images are 827×1170 px (100 DPI). Rendering the PDF at 200 DPI upsamples them 2×. C1 and C2 are 1654×2339 px (200 DPI).
+- Every scan PDF has exactly one embedded JPEG. `page.get_images()` finds it, and `extract_image` returns the original bytes.
+- RapidOCR took about 2.5–3.2 s per scan page on this laptop, with the engine already loaded and no clean-up step (measured in the throwaway check).

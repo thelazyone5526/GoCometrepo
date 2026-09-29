@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "doc_id": "V2-C1",
+  "file": "V2-C1.pdf",
+  "description": "Eval grid: V2, correct invoice; skewed scan",
+  "version": "V2",
+  "base_version": "V2",
+  "condition": "C1",
+  "condition_description": "Skewed scan: rotated 2-4 degrees, grayscale, 200 DPI, image-only PDF",
+  "degradation": {
+    "condition": "C1",
+    "dpi": 200,
+    "grayscale": true,
+    "rotation_deg": -2.5,
+    "blur_sigma": 0.0,
+    "noise_sigma": 2.5,
+    "speckle_fraction": 0.0,
+    "jpeg_quality": 80,
+    "stamp": false,
+    "width_px": 1654,
+    "height_px": 2339
+  },
+  "customer_id": "acme",
+  "doc_type": "commercial_invoice",
+  "planted_errors": [],
+  "fields": {
+    "consignee": {
+      "printed": "ACME Electronics Pte. Ltd.",
+      "value": "ACME Electronics Pte. Ltd.",
+      "verdict": "match"
+    },
+    "hs_code": {
+      "printed": "8471.60",
+      "value": "847160",
+      "verdict": "match"
+    },
+    "port_of_loading": {
+      "printed": "YANTIAN, CHINA",
+      "value": "Yantian",
+      "verdict": "match"
+    },
+    "port_of_discharge": {
+      "printed": "SINGAPORE",
+      "value": "Singapore",
+      "verdict": "match"
+    },
+    "incoterms": {
+      "printed": "CIF Singapore",
+      "value": "CIF",
+      "verdict": "match"
+    },
+    "goods_description": {
+      "printed": "Wired USB keyboard and optical mouse sets",
+      "value": "Wired USB keyboard and optical mouse sets",
+      "verdict": "match"
+    },
+    "gross_weight": {
+      "printed": "3,120.00 KGS",
+      "value": {
+        "amount": 3120.0,
+        "unit": "KG"
+      },
+      "verdict": "match"
+    },
+    "invoice_number": {
+      "printed": "INV-2026-00533",
+      "value": "INV-2026-00533",
+      "verdict": "match"
+    }
+  },
+  "acceptable_outcomes": [
+    "auto_approve",
+    "human_review"
+  ]
+}

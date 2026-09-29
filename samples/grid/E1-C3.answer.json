@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "doc_id": "E1-C3",
+  "file": "E1-C3.pdf",
+  "description": "Eval grid: V1 with planted error E1; noisy low-resolution scan with stamp",
+  "version": "E1",
+  "base_version": "V1",
+  "condition": "C3",
+  "condition_description": "Noisy low-resolution scan: 100 DPI colour, noise, speckles, heavy JPEG compression and a RECEIVED stamp partly covering the gross weight, image-only PDF",
+  "degradation": {
+    "condition": "C3",
+    "dpi": 100,
+    "grayscale": false,
+    "rotation_deg": 0.0,
+    "blur_sigma": 0.0,
+    "noise_sigma": 12.0,
+    "speckle_fraction": 0.004,
+    "jpeg_quality": 55,
+    "stamp": true,
+    "width_px": 827,
+    "height_px": 1170
+  },
+  "customer_id": "acme",
+  "doc_type": "commercial_invoice",
+  "planted_errors": [
+    {
+      "code": "E1",
+      "field": "hs_code",
+      "description": "HS code 8504.40 (static converters) is not on ACME's approved list"
+    }
+  ],
+  "fields": {
+    "consignee": {
+      "printed": "ACME Electronics Pte. Ltd.",
+      "value": "ACME Electronics Pte. Ltd.",
+      "verdict": "match"
+    },
+    "hs_code": {
+      "printed": "8504.40",
+      "value": "850440",
+      "verdict": "mismatch"
+    },
+    "port_of_loading": {
+      "printed": "SHANGHAI, CHINA",
+      "value": "Shanghai",
+      "verdict": "match"
+    },
+    "port_of_discharge": {
+      "printed": "SINGAPORE",
+      "value": "Singapore",
+      "verdict": "match"
+    },
+    "incoterms": {
+      "printed": "CIF Singapore",
+      "value": "CIF",
+      "verdict": "match"
+    },
+    "goods_description": {
+      "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+      "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+      "verdict": "match"
+    },
+    "gross_weight": {
+      "printed": "862.40 KGS",
+      "value": {
+        "amount": 862.4,
+        "unit": "KG"
+      },
+      "verdict": "match"
+    },
+    "invoice_number": {
+      "printed": "INV-2026-00417",
+      "value": "INV-2026-00417",
+      "verdict": "match"
+    }
+  },
+  "acceptable_outcomes": [
+    "amendment_request",
+    "human_review"
+  ]
+}

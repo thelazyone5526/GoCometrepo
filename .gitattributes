@@ -1,0 +1,9 @@
+# Sample documents are binary. Without this, git's line-ending conversion on Windows
+# (core.autocrlf) could treat a PDF as text and corrupt it on checkout.
+*.pdf binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+
+# Answer files are generated with LF endings; keep them that way on every platform.
+*.answer.json text eol=lf

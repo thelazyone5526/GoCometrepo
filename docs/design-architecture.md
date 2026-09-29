@@ -1,6 +1,6 @@
 # Design and Architecture: Trade Document Pipeline (Part 1)
 
-Status: draft v0.2 · September 2026 · Lives in `GoCometrepo/docs/` since Phase 1. Phase 1 findings are folded into §9 and §10.1.
+Status: draft v0.3 · September 2026 · Lives in `GoCometrepo/docs/` since Phase 1. Phase 1 findings are folded into §9 and §10.1; Phase 2 ticked item 13 and added the samples layout (§9) and two open items (§10.1).
 
 This is the engineering blueprint: what we build, how the parts fit, and what "done" means. The "what and why" for GoComet lives in `Ansh/PRD-part1-draft.md`. The plain-language teaching version, with every rejected alternative, lives in `Ansh/00-architecture-overview.md`.
 
@@ -12,9 +12,9 @@ Tags: **B** = build and test in code · **D** = describe only (PRD, write-up, RE
 
 | # | Item | Tag | Done when |
 |---|---|---|---|
-| 1 | Accept one PDF, PNG or JPG (max 10 MB, 5 pages) plus a customer ID | B | Both sample documents upload and start a run |
+| 1 | Accept one PDF, PNG or JPG (max 10 MB, 5 pages) plus a customer ID | B | All three submission samples (and the sample JPG) upload and start a run |
 | 2 | Page preparation: render pages to images; get text lines with positions from the PDF text layer, or from image clean-up + OCR for scans | B | Every page yields a list of text spans (lines), each with position and confidence |
-| 3 | Extractor: Gemini returns document type and all 8 fields, each with value (or null), exact source text and a self-rating | B | Output passes its schema on both samples |
+| 3 | Extractor: Gemini returns document type and all 8 fields, each with value (or null), exact source text and a self-rating | B | Output passes its schema on all three submission samples |
 | 4 | Grounding and confidence in code: find each source text among the page words, check the value follows from it, check formats, score confidence | B | Unit tests: invented value → uncertain; "ACME" read from a page saying "ACEM" → uncertain with both readings; bad format → uncertain |
 | 5 | Validator: check each field against ACME's YAML rules; Gemini only for the goods description and unsettled consignee names | B | One unit test per rule; no "match" unless grounded and above the threshold |
 | 6 | Router (Option B): code works out the allowed outcomes, Gemini picks one and writes the reasoning and amendment draft, code checks both | B | Unit test: no path auto-approves a document with an uncertain or mismatched field; every mismatch appears in the draft; overrides are logged |
@@ -23,13 +23,13 @@ Tags: **B** = build and test in code · **D** = describe only (PRD, write-up, RE
 | 9 | Storage: every run stored (not just approved ones), duplicate uploads caught by file hash | B | Flagged and amendment runs can be queried |
 | 10 | Plain-English query: Gemini writes SQL, code allows read-only SELECTs on approved views only, answer shown with its SQL | B | 6 sample questions match hand-written SQL; a DELETE attempt is refused |
 | 11 | API (FastAPI), bound to localhost only | B | All endpoints in section 6 work from the UI |
-| 12 | UI: upload, live pipeline progress, decision first, field table with both confidences, evidence on the page image, reasoning, draft, query box | B | Shows real state from a real run on both samples |
+| 12 | UI: upload, live pipeline progress, decision first, field table with both confidences, evidence on the page image, reasoning, draft, query box | B | Shows real state from a real run on all three submission samples |
 
 ### 1.2 Trust, evals and evidence
 
 | # | Item | Tag | Done when |
 |---|---|---|---|
-| 13 | Sample generator: ACME commercial invoices with known correct values; clean and degraded versions; planted errors | B | Makes three submission samples (clean and correct, clean with errors, messy scan) plus the eval grid, each with an answer file |
+| 13 | Sample generator: ACME commercial invoices with known correct values; clean and degraded versions; planted errors | B | Makes three submission samples (clean and correct, clean with errors, messy scan) plus the eval grid, each with an answer file. **Done (Phase 2):** `python -m samples.generate` writes 28 grid PDFs, 3 submission samples and 1 JPG, each with a schema-checked answer file; `tests/test_samples.py` |
 | 14 | Offline eval: 28 documents (4 image conditions × 7 versions), one command | B | Report shows field accuracy by field and condition, invented values, verdict and outcome accuracy; any wrong auto-approval fails the run |
 | 15 | Unit tests (pytest) for everything deterministic | B | Grounding, confidence, formats, rules, guardrails and the SQL gate pass |
 | 16 | Failure log kept during testing | B | At least 3 real failures written down, with cause and fix, for the write-up |
@@ -342,10 +342,17 @@ GoCometrepo/
     rules/acme.yaml
     tests/
   frontend/                 Vite + React
-  samples/                  generator, generated documents, answer files
+  samples/                  python -m samples.generate (run from the repo root)
+    shipments.py            ground truth: V1, V2, error versions E1-E5, E1E4
+    render.py               invoice layout (fpdf2); degrade.py scan conditions (Pillow, OpenCV)
+    answers.py              answer-file schema (Pydantic); generate.py the one command
+    grid/                   28 eval documents (<version>-<condition>.pdf) + .answer.json each
+    submission/             01-clean-correct, 02-clean-two-errors, 03-messy-scan + answers
+    jpg/                    V1-C1.jpg, the image-upload test, + answer
   eval/                     eval runner, reports/
   docs/                     this document, PRD, write-up, failure log, sample queries
   data/                     git-ignored: app.db, checkpoints.db, uploads/
+  .gitattributes            PDFs and images binary, answer files LF (Windows autocrlf safety)
 ```
 
 Dependencies, pinned in Phase 1 on Python 3.14.2 (exact versions in `backend/requirements.txt`): fastapi, uvicorn, python-multipart, langgraph, langgraph-checkpoint-sqlite, google-genai, pydantic, pymupdf, opencv-python, numpy, rapidocr (with onnxruntime), rapidfuzz, pyyaml, python-dotenv, fpdf2, pillow. Dev: pytest, ruff, httpx.
@@ -394,3 +401,11 @@ Build order, detailed phase by phase in `implementation-plan.md`. Each step ends
 - **Operator override button**: not built in Part 1 (reserved columns only). Revisit if we want the online metric in the demo.
 - **Threshold, grounding cut-offs (90% near match, 85–99 consignee band) and the 0.9 readable-page cut-off** are starting values. Tune all of them with the eval, and record the final values and why.
 - **One HS code per document** is assumed, and the samples carry one. Invoices with several different HS codes are a known limitation for the write-up.
+- **Outcome names differ between §3.5 and §4 (found in Phase 2).** §3.5 (Router) uses `auto_approve`, `human_review`, `amendment_request`. §4 (`runs.outcome`) uses `auto_approved`, `human_review`, `amendment_requested`. The answer files use the §3.5 names, because they score the Router's decision. Settle it in Phase 7 or 8: either use one set everywhere, or map one to the other in exactly one place.
+- **Canonical values the answer files commit to (Phase 2).** Later normalisers must produce these forms:
+  - HS code: digits only (`847130`).
+  - Weight: amount plus `KG` or `LB` (`{"amount": 862.4, "unit": "KG"}`).
+  - Incoterm: the code only (`CIF`, from "CIF Singapore").
+  - Ports: the rule file's names. Phase 5's alias table must map the printed forms "SHANGHAI, CHINA", "YANTIAN, CHINA" and "SINGAPORE" to `Shanghai`, `Yantian` and `Singapore`.
+  - Text fields: the printed text itself, compared after normalising case, spaces and punctuation.
+  - E5's missing invoice number is `null`. Expected verdict `mismatch` on a readable page; on a scan the page may count as unreadable (§3.4), which makes it `uncertain`. Both lead to an acceptable outcome, and Phase 12 decides how to score it.

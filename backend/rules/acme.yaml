@@ -1,0 +1,26 @@
+# ACME Electronics Pte. Ltd. (fictional Singapore importer): document rules.
+# Source: design-architecture.md section 3.4. The loader and checkers arrive in Phase 6;
+# until then this file is data only. A new customer means a new file like this, not new code.
+#
+# expected_fields per document type is "schema routing": a field not listed for a document
+# type gets the verdict not_applicable and doesn't affect the decision.
+
+customer_id: acme
+customer_name: ACME Electronics Pte. Ltd.
+
+document_types:
+  commercial_invoice:
+    expected_fields: [consignee, hs_code, port_of_loading, port_of_discharge,
+                      incoterms, goods_description, gross_weight, invoice_number]
+
+rules:
+  consignee:         {id: R-CON-1, type: entity_name, registered: "ACME Electronics Pte. Ltd.",
+                      aliases: ["ACME Electronics Private Limited"]}
+  hs_code:           {id: R-HS-1, type: in_list, compare_digits: 6, allowed: ["847130", "847160", "847330"]}
+  port_of_loading:   {id: R-POL-1, type: in_list, allowed: ["Shanghai", "Yantian"]}
+  port_of_discharge: {id: R-POD-1, type: equals, value: "Singapore"}
+  incoterms:         {id: R-INC-1, type: equals, value: "CIF"}
+  gross_weight:      {id: R-GW-1, type: quantity, unit: KG, min_exclusive: 0}
+  invoice_number:    {id: R-INV-1, type: pattern, regex: "^INV-\\d{4}-\\d{4,}$",
+                      reject: ["TBD", "N/A", "0000"]}
+  goods_description: {id: R-DESC-1, type: llm_judgement, criterion: "specific enough for customs classification"}

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "doc_id": "V2-C3",
+  "file": "V2-C3.pdf",
+  "description": "Eval grid: V2, correct invoice; noisy low-resolution scan with stamp",
+  "version": "V2",
+  "base_version": "V2",
+  "condition": "C3",
+  "condition_description": "Noisy low-resolution scan: 100 DPI colour, noise, speckles, heavy JPEG compression and a RECEIVED stamp partly covering the gross weight, image-only PDF",
+  "degradation": {
+    "condition": "C3",
+    "dpi": 100,
+    "grayscale": false,
+    "rotation_deg": 0.0,
+    "blur_sigma": 0.0,
+    "noise_sigma": 12.0,
+    "speckle_fraction": 0.004,
+    "jpeg_quality": 55,
+    "stamp": true,
+    "width_px": 827,
+    "height_px": 1170
+  },
+  "customer_id": "acme",
+  "doc_type": "commercial_invoice",
+  "planted_errors": [],
+  "fields": {
+    "consignee": {
+      "printed": "ACME Electronics Pte. Ltd.",
+      "value": "ACME Electronics Pte. Ltd.",
+      "verdict": "match"
+    },
+    "hs_code": {
+      "printed": "8471.60",
+      "value": "847160",
+      "verdict": "match"
+    },
+    "port_of_loading": {
+      "printed": "YANTIAN, CHINA",
+      "value": "Yantian",
+      "verdict": "match"
+    },
+    "port_of_discharge": {
+      "printed": "SINGAPORE",
+      "value": "Singapore",
+      "verdict": "match"
+    },
+    "incoterms": {
+      "printed": "CIF Singapore",
+      "value": "CIF",
+      "verdict": "match"
+    },
+    "goods_description": {
+      "printed": "Wired USB keyboard and optical mouse sets",
+      "value": "Wired USB keyboard and optical mouse sets",
+      "verdict": "match"
+    },
+    "gross_weight": {
+      "printed": "3,120.00 KGS",
+      "value": {
+        "amount": 3120.0,
+        "unit": "KG"
+      },
+      "verdict": "match"
+    },
+    "invoice_number": {
+      "printed": "INV-2026-00533",
+      "value": "INV-2026-00533",
+      "verdict": "match"
+    }
+  },
+  "acceptable_outcomes": [
+    "auto_approve",
+    "human_review"
+  ]
+}

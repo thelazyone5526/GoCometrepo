@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "doc_id": "V1-C2",
+  "file": "V1-C2.pdf",
+  "description": "Eval grid: V1, correct invoice; blurred scan",
+  "version": "V1",
+  "base_version": "V1",
+  "condition": "C2",
+  "condition_description": "Blurred scan: Gaussian blur (sigma 1.9-2.3 px), grayscale, 200 DPI, image-only PDF",
+  "degradation": {
+    "condition": "C2",
+    "dpi": 200,
+    "grayscale": true,
+    "rotation_deg": 0.0,
+    "blur_sigma": 2.05,
+    "noise_sigma": 2.5,
+    "speckle_fraction": 0.0,
+    "jpeg_quality": 80,
+    "stamp": false,
+    "width_px": 1654,
+    "height_px": 2339
+  },
+  "customer_id": "acme",
+  "doc_type": "commercial_invoice",
+  "planted_errors": [],
+  "fields": {
+    "consignee": {
+      "printed": "ACME Electronics Pte. Ltd.",
+      "value": "ACME Electronics Pte. Ltd.",
+      "verdict": "match"
+    },
+    "hs_code": {
+      "printed": "8471.30",
+      "value": "847130",
+      "verdict": "match"
+    },
+    "port_of_loading": {
+      "printed": "SHANGHAI, CHINA",
+      "value": "Shanghai",
+      "verdict": "match"
+    },
+    "port_of_discharge": {
+      "printed": "SINGAPORE",
+      "value": "Singapore",
+      "verdict": "match"
+    },
+    "incoterms": {
+      "printed": "CIF Singapore",
+      "value": "CIF",
+      "verdict": "match"
+    },
+    "goods_description": {
+      "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+      "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+      "verdict": "match"
+    },
+    "gross_weight": {
+      "printed": "862.40 KGS",
+      "value": {
+        "amount": 862.4,
+        "unit": "KG"
+      },
+      "verdict": "match"
+    },
+    "invoice_number": {
+      "printed": "INV-2026-00417",
+      "value": "INV-2026-00417",
+      "verdict": "match"
+    }
+  },
+  "acceptable_outcomes": [
+    "auto_approve",
+    "human_review"
+  ]
+}

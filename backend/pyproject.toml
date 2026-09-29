@@ -7,7 +7,8 @@ requires-python = ">=3.14"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+# "." for the app package, ".." for the repo-root packages (samples/, later eval/)
+pythonpath = [".", ".."]
 # Tests marked `live` call the real Gemini API and spend quota.
 # They are skipped by default; run them with: pytest -m live
 markers = ["live: calls the real Gemini API (spends free-tier quota)"]
@@ -16,6 +17,9 @@ addopts = "-m 'not live'"
 [tool.ruff]
 line-length = 100
 extend-exclude = [".venv"]
+# First-party code lives here and at the repo root (samples/). Lint the root packages with
+# this same config: ruff check . ..\samples --config pyproject.toml
+src = [".", ".."]
 
 [tool.ruff.lint]
 # E/F: pycodestyle + pyflakes, I: import order, B: bugbear, UP: modern syntax, SIM: simplifications
