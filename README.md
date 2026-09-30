@@ -24,6 +24,65 @@ The full design is in [`docs/design-architecture.md`](docs/design-architecture.m
 plain-language walkthrough of every piece, written to be learned from, is in
 [`Ansh/`](../Ansh/).
 
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Browser["Browser (React + Vite, localhost:5173)"]
+        Upload["Upload + run history"]
+        RunView["Run view (polls every second)"]
+        Ask["Ask box"]
+    end
+
+    subgraph API["FastAPI (127.0.0.1:8000)"]
+        PostRuns["POST /api/runs"]
+        GetRuns["GET /api/runs/{id}"]
+        PostQuery["POST /api/query"]
+    end
+
+    subgraph Pipeline["LangGraph pipeline"]
+        direction LR
+        Prepare["prepare"] --> Extract["extract\n(Gemini, vision)"]
+        Extract --> Validate["validate\n(Gemini, fuzzy cases)"]
+        Validate --> Route["route\n(Gemini, decide + draft)"]
+        Route --> Persist["persist"]
+        Prepare -.error.-> Escalate["escalate\n(human review)"]
+        Extract -.error.-> Escalate
+        Validate -.error.-> Escalate
+        Route -.error.-> Escalate
+        Escalate --> Persist
+    end
+
+    subgraph Storage["Local storage"]
+        Uploads[("data/uploads/\noriginal files + page images")]
+        AppDB[("data/app.db\nshipments, documents, runs,\nfield_results, llm_calls")]
+        Checkpoints[("data/checkpoints.db\nLangGraph state per step")]
+        Rules[("rules/acme.yaml\ncustomer rules")]
+    end
+
+    subgraph Query["Query service"]
+        QuerySvc["Gemini writes SQL\ncode gate: read-only,\nsingle statement, view allow-list"]
+    end
+
+    Upload --> PostRuns
+    RunView --> GetRuns
+    Ask --> PostQuery
+
+    PostRuns -->|background task| Pipeline
+    GetRuns --> AppDB
+    PostQuery --> QuerySvc
+    QuerySvc --> AppDB
+
+    Pipeline --> Uploads
+    Pipeline --> AppDB
+    Pipeline --> Checkpoints
+    Rules --> Prepare
+```
+
+Where state lives: during a run, in the LangGraph state, checkpointed after every node; after
+a run, the final result in `app.db`, which is all the UI and the query layer ever read from.
+Everything under `data/` is git-ignored and can be deleted to reset.
+
 ## Requirements
 
 - **Python 3.14** (verified on 3.14.2, Windows 11)
