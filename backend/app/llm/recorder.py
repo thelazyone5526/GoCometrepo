@@ -4,6 +4,7 @@ fallback. It writes to memory for now; Phase 8 points it at the `llm_calls` tabl
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
@@ -31,10 +32,18 @@ class CallRecord:
 
 
 class CallRecorder:
-    """An in-memory `llm_calls` log. One instance is shared across a run's calls."""
+    """An in-memory `llm_calls` log. One instance is shared across a run's calls.
 
-    def __init__(self) -> None:
+    `on_record`, if given, fires synchronously after every attempt is appended -- this is
+    what lets the graph write each call to `app.db` the moment it happens (see
+    `graph.nodes._make_client`), instead of only at the end of the run in `persist_node`/
+    `escalate_node`. Without it, a run's call log stays invisible to anyone polling the API
+    until the whole run finishes, which is misleading for a run that's mid-retry or stuck on
+    a slow fallback."""
+
+    def __init__(self, *, on_record: Callable[[CallRecord], None] | None = None) -> None:
         self._records: list[CallRecord] = []
+        self._on_record = on_record
 
     def record(
         self,
@@ -69,6 +78,8 @@ class CallRecorder:
             error=error,
         )
         self._records.append(rec)
+        if self._on_record is not None:
+            self._on_record(rec)
         return rec
 
     @property

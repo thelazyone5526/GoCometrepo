@@ -1,41 +1,71 @@
 import { useEffect, useState } from 'react'
 import { getRunLlmCalls } from '../api/api.js'
 
+const POLL_INTERVAL_MS = 1500
+
 // Evidence behind the metrics strip on the decision card: one row per real LLM call attempt
 // (agent, model, whether it was a retry or a fallback-model call, tokens, latency, status).
 // Collapsed by default so it doesn't compete with the decision/reasoning above it — expand
 // it to see, e.g., a failed primary-model attempt followed by a successful fallback call.
-function CallLogTable({ runId }) {
+//
+// `isRunInProgress` makes this poll every 1.5s while the run is still going, since each call
+// attempt is now written to `llm_calls` the moment it happens (see `graph.build.
+// _live_recorder`) rather than only once the whole run finishes -- so a retry loop or a
+// fallback-model wait is visible live, not just in hindsight.
+function CallLogTable({ runId, isRunInProgress }) {
   const [calls, setCalls] = useState(null)
   const [error, setError] = useState(null)
-  const [open, setOpen] = useState(false)
+  // Starts expanded for an in-progress run (there's something worth watching live), and
+  // collapsed for an already-finished one (the decision card above already says what
+  // happened; this is supporting evidence, not the headline).
+  const [open, setOpen] = useState(isRunInProgress)
 
   useEffect(() => {
-    if (!open || calls !== null) return
+    if (!open) return
     let cancelled = false
-    getRunLlmCalls(runId)
-      .then((data) => {
-        if (!cancelled) setCalls(data)
-      })
-      .catch((err) => {
+    let timer = null
+
+    async function poll() {
+      try {
+        const data = await getRunLlmCalls(runId)
+        if (cancelled) return
+        setCalls(data)
+        setError(null)
+      } catch (err) {
         if (!cancelled) setError(err.message)
-      })
+      }
+      if (!cancelled && isRunInProgress) {
+        timer = setTimeout(poll, POLL_INTERVAL_MS)
+      }
+    }
+
+    poll()
+
     return () => {
       cancelled = true
+      if (timer) clearTimeout(timer)
     }
-  }, [open, runId, calls])
+  }, [open, runId, isRunInProgress])
 
   return (
     <section className="card">
-      <details onToggle={(e) => setOpen(e.target.open)}>
-        <summary className="call-log__summary">LLM call log</summary>
+      <details open={open} onToggle={(e) => setOpen(e.target.open)}>
+        <summary className="call-log__summary">
+          LLM call log{isRunInProgress ? ' (live)' : ''}
+        </summary>
         {error && (
           <p className="error-text" role="alert">
             Could not load call log: {error}
           </p>
         )}
         {open && !error && calls === null && <p role="status">Loading call log…</p>}
-        {calls !== null && calls.length === 0 && <p>No LLM calls recorded for this run.</p>}
+        {open && !error && calls !== null && calls.length === 0 && (
+          <p role="status">
+            {isRunInProgress
+              ? 'No LLM calls yet — waiting on the first one to complete…'
+              : 'No LLM calls recorded for this run.'}
+          </p>
+        )}
         {calls !== null && calls.length > 0 && (
           <table className="call-log-table">
             <caption className="visually-hidden">

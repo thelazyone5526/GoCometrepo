@@ -14,7 +14,7 @@ from typing import Any
 
 from langgraph.graph import END, StateGraph
 
-from app.llm.recorder import CallRecorder
+from app.llm.recorder import CallRecord, CallRecorder
 from app.store import repository as repo
 
 from .nodes import (
@@ -33,6 +33,32 @@ RECURSION_LIMIT = 10
 
 def _has_error(state: dict[str, Any]) -> str:
     return "escalate" if state.get("error") else "continue"
+
+
+def _live_recorder(conn: sqlite3.Connection) -> CallRecorder:
+    """A `CallRecorder` that writes each attempt to `llm_calls` as it happens, not just at
+    the end of the run -- so a run that's mid-retry or waiting on a fallback shows its call
+    log immediately to anyone polling `GET /api/runs/{id}/llm-calls`, instead of the log
+    staying empty until `persist_node`/`escalate_node` flush it in bulk at the finish line."""
+
+    def _write(call: CallRecord) -> None:
+        repo.insert_llm_call(
+            conn,
+            run_id=call.run_id,
+            agent=call.agent,
+            model=call.model,
+            is_fallback=call.is_fallback,
+            prompt_version=call.prompt_version,
+            attempt=call.attempt,
+            status=call.status,
+            input_tokens=call.input_tokens,
+            output_tokens=call.output_tokens,
+            thinking_tokens=call.thinking_tokens,
+            latency_ms=call.latency_ms,
+            error=call.error,
+        )
+
+    return CallRecorder(on_record=_write)
 
 
 def build_graph(*, conn: sqlite3.Connection, recorder: CallRecorder, checkpointer: Any):
@@ -79,7 +105,7 @@ def run_document(
     the duplicate-upload check and creating the `shipments`/`documents` rows first -- this
     function only creates the `runs` row and drives the graph."""
     repo.create_run(conn, run_id=run_id, document_id=document_id)
-    recorder = CallRecorder()
+    recorder = _live_recorder(conn)
     graph = build_graph(conn=conn, recorder=recorder, checkpointer=checkpointer)
 
     initial_state: RunState = {
@@ -97,7 +123,7 @@ def resume_document(*, conn: sqlite3.Connection, checkpointer: Any, run_id: str)
     """Continue a run from its last checkpoint (design section 3.7). LangGraph resumes from
     exactly the last saved state when invoked with `None` and the same `thread_id` -- nodes
     already completed (and their LLM calls) are not repeated."""
-    recorder = CallRecorder()
+    recorder = _live_recorder(conn)
     graph = build_graph(conn=conn, recorder=recorder, checkpointer=checkpointer)
     config = {"configurable": {"thread_id": run_id}, "recursion_limit": RECURSION_LIMIT}
     return graph.invoke(None, config=config)

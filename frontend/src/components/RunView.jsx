@@ -67,7 +67,7 @@ function RunView({ runId }) {
         <h2 id="fields-heading">Fields</h2>
         <FieldTable fieldResults={run.field_results} />
       </section>
-      {run.llm_calls > 0 && <CallLogTable runId={run.id} />}
+      <CallLogTable runId={run.id} isRunInProgress={run.status === 'processing'} />
     </div>
   )
 }

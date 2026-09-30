@@ -168,10 +168,11 @@ def route_node(state: dict[str, Any], *, conn: Any, recorder: CallRecorder) -> d
 
 def persist_node(state: dict[str, Any], *, conn: Any, recorder: CallRecorder) -> dict[str, Any]:
     """Writes the final result to `app.db` (design section 3.1) and marks the run completed.
-    Every field's extraction and verdict is written as one `field_results` row, and every
-    logged LLM call (design section 3.6) as one `llm_calls` row -- from the shared
-    `CallRecorder`, not from `state`, since the recorder (not the checkpointed state) is what
-    every node's `LLMClient` writes attempts into as the run goes."""
+    Every field's extraction and verdict is written as one `field_results` row. Individual
+    `llm_calls` rows are no longer inserted here -- `graph.build._live_recorder` writes each
+    one the moment it happens, so a run's call log is visible while it's still in progress,
+    not only once it finishes. This node only reads the recorder's in-memory totals (tokens,
+    latency, whether the fallback model was used) to fill in the run's summary counters."""
     run_id = state["run_id"]
     extraction = state["extraction"]
     validation = state["validation"]
@@ -208,21 +209,6 @@ def persist_node(state: dict[str, Any], *, conn: Any, recorder: CallRecorder) ->
     total_latency_ms = 0.0
     fallback_used = False
     for call in recorder.for_run(run_id):
-        repo.insert_llm_call(
-            conn,
-            run_id=run_id,
-            agent=call.agent,
-            model=call.model,
-            is_fallback=call.is_fallback,
-            prompt_version=call.prompt_version,
-            attempt=call.attempt,
-            status=call.status,
-            input_tokens=call.input_tokens,
-            output_tokens=call.output_tokens,
-            thinking_tokens=call.thinking_tokens,
-            latency_ms=call.latency_ms,
-            error=call.error,
-        )
         total_input_tokens += call.input_tokens
         total_output_tokens += call.output_tokens
         total_latency_ms += call.latency_ms
@@ -251,27 +237,11 @@ def escalate_node(state: dict[str, Any], *, conn: Any, recorder: CallRecorder) -
     `state["error"]`. Never fails itself -- there is nothing left to escalate to.
 
     Whatever LLM calls were actually made before the failure (e.g. a successful `extract`
-    call, followed by a `validate` call that then failed) are still written to `llm_calls` --
-    the call log's whole point (design section 3.6) is a complete record of every attempt,
-    escalated run or not, so a real quota/cost report never has to treat escalations as a
-    blind spot.
+    call, followed by a `validate` call that then failed) are already in `llm_calls` --
+    `graph.build._live_recorder` writes each attempt the moment it happens, not just here --
+    so a real quota/cost report never has to treat escalations as a blind spot, and nothing
+    needs re-inserting on this path either.
     """
     run_id = state["run_id"]
-    for call in recorder.for_run(run_id):
-        repo.insert_llm_call(
-            conn,
-            run_id=run_id,
-            agent=call.agent,
-            model=call.model,
-            is_fallback=call.is_fallback,
-            prompt_version=call.prompt_version,
-            attempt=call.attempt,
-            status=call.status,
-            input_tokens=call.input_tokens,
-            output_tokens=call.output_tokens,
-            thinking_tokens=call.thinking_tokens,
-            latency_ms=call.latency_ms,
-            error=call.error,
-        )
     repo.escalate_run(conn, run_id=run_id, reason=state.get("error") or "unknown error")
     return {"current_step": "escalated"}
