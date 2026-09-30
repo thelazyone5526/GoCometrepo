@@ -25,7 +25,7 @@ from app.llm.cache import CachingTransport
 from app.llm.client import LLMClient
 from app.llm.gemini_transport import GeminiTransport
 from app.llm.recorder import CallRecorder
-from app.trust.normalise import Weight, normalise_hs_code, normalise_incoterm, normalise_port
+from app.trust.normalise import normalise_hs_code, normalise_incoterm, normalise_port
 from samples.answers import load_answer
 
 pytestmark = pytest.mark.live
@@ -61,7 +61,10 @@ def _matches_expected(field_name: str, value: str | None, expected) -> bool:
         parsed = normalise_weight(value)
         if parsed is None:
             return False
-        return parsed.unit == expected.value.unit and abs(parsed.amount - expected.value.amount) < 0.01
+        return (
+            parsed.unit == expected.value.unit
+            and abs(parsed.amount - expected.value.amount) < 0.01
+        )
     if field_name in _STRUCTURED:
         return _STRUCTURED[field_name](value) == expected.value
     return value.strip() == str(expected.value).strip()
