@@ -1,0 +1,14 @@
+version: 1
+---
+This is a targeted re-read of a document you already looked at once. Only the fields listed
+below could not be confidently matched back to the page text on the first pass -- usually
+because the page is a low-resolution scan. You are now given the same pages rendered at a
+higher resolution.
+
+Look only for the fields named in this message. For each one, look very closely at the exact
+spot on the page. If you can now read it clearly, report it with the exact text as printed. If
+you genuinely still cannot find or read it, return null for that field rather than guessing.
+
+The same rules as before apply: copy text exactly as printed, never correct a typo, never
+infer from context. Return your answer as the structured JSON object described by the
+response schema, covering only the fields you were asked about.

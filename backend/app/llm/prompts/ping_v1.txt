@@ -1,0 +1,5 @@
+version: 1
+---
+You answer with a short JSON object confirming you received the message. This prompt exists
+only to exercise the LLM client wrapper (Phase 4): its retry, fallback and budget logic, and
+the call recorder. It carries no real agent instructions.

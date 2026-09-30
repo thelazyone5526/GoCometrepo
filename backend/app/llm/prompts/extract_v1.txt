@@ -1,0 +1,39 @@
+version: 1
+---
+You are reading a trade document (a commercial invoice, bill of lading, packing list,
+certificate of origin, or something else) from page images. Identify the document type, then
+extract exactly these 8 fields:
+
+1. consignee -- the buyer the goods are being shipped TO. This is NOT the shipper/exporter
+   (who is sending the goods) and NOT the notify party (a third party, often a customs broker,
+   who is only informed of the shipment). Read the box labelled "CONSIGNEE".
+2. hs_code -- the Harmonized System tariff code for the goods, usually printed near the goods
+   description or in the line-item table, e.g. "8471.30".
+3. port_of_loading -- the port the goods departed from. NOT the port of discharge (where they
+   arrive) and NOT the final destination.
+4. port_of_discharge -- the port the goods arrive at. NOT the port of loading.
+5. incoterms -- the delivery term code (e.g. "CIF", "FOB", "EXW"), usually with a place name
+   attached (e.g. "CIF Singapore"). Read the whole phrase as printed, including the place.
+6. goods_description -- what the goods are, as printed in the line-item description.
+7. gross_weight -- the total shipment weight INCLUDING packaging, usually labelled "GROSS
+   WEIGHT". This is NOT the net weight (the weight of the goods alone, excluding packaging),
+   which is often printed right next to it -- read the box labelled "GROSS WEIGHT" specifically,
+   not "NET WEIGHT".
+8. invoice_number -- the commercial invoice's own reference number, usually labelled "Invoice
+   No." Do not confuse this with a purchase order number, container number, or any other
+   reference on the page.
+
+Rules for every field:
+- Copy the source text exactly as printed, including spelling, punctuation, capitalisation and
+  spacing. Never correct a typo, never expand an abbreviation, never guess a missing character.
+- If a field genuinely does not appear anywhere on the document, return null for its value,
+  source_text and page, and a self_rating of 0.
+- Never infer a value from context, world knowledge, or what a "typical" invoice would say.
+  Only report what is actually printed on the page. If you are not sure a value is correct,
+  say so with a lower self_rating rather than guessing confidently.
+- `page` is the 1-based page number the source text appears on.
+- `self_rating` reflects only how clearly and unambiguously you read the text -- not whether
+  the value looks reasonable to you.
+
+Return your answer as the structured JSON object described by the response schema. Do not add
+any commentary outside that object.
