@@ -236,6 +236,22 @@ Runs the 3 submission samples through the real pipeline, scores each field's ver
 final outcome against its `.answer.json`, and writes `eval/reports/submission-smoke-run.md`
 and `.json`. This is never run automatically and does spend real Gemini quota.
 
+Real result from the last run (checked in at `eval/reports/submission-smoke-run.md`): 24/24
+field verdicts correct across all three samples, both error documents correctly routed to
+amendment/review, zero wrong auto-approvals.
+
+### Sample queries
+
+```powershell
+# From the repo root, after at least one document has gone through the pipeline. 6 real
+# Gemini calls (one per question) against the free tier.
+backend\.venv\Scripts\python -m eval.run_sample_queries
+```
+
+Runs the query layer's six worked-example questions against the real, populated `data/app.db`
+and writes each question, the SQL Gemini wrote for it, and the result to
+`docs/sample-queries.md`.
+
 ## Tests
 
 ```powershell

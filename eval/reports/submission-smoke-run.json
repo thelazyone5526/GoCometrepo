@@ -1,0 +1,175 @@
+[
+  {
+    "doc_id": "V1-C0",
+    "file": "01-clean-correct.pdf",
+    "run_id": "b575c99b69e549ed97b69fe40b3ff34c",
+    "error": null,
+    "field_matches": {
+      "consignee": true,
+      "hs_code": true,
+      "port_of_loading": true,
+      "port_of_discharge": true,
+      "incoterms": true,
+      "goods_description": true,
+      "gross_weight": true,
+      "invoice_number": true
+    },
+    "field_details": {
+      "consignee": [
+        "match",
+        "match"
+      ],
+      "hs_code": [
+        "match",
+        "match"
+      ],
+      "port_of_loading": [
+        "match",
+        "match"
+      ],
+      "port_of_discharge": [
+        "match",
+        "match"
+      ],
+      "incoterms": [
+        "match",
+        "match"
+      ],
+      "goods_description": [
+        "match",
+        "match"
+      ],
+      "gross_weight": [
+        "match",
+        "match"
+      ],
+      "invoice_number": [
+        "match",
+        "match"
+      ]
+    },
+    "outcome": "auto_approved",
+    "acceptable_outcomes": [
+      "auto_approve"
+    ],
+    "outcome_acceptable": true,
+    "llm_calls": 3,
+    "fallback_used": false
+  },
+  {
+    "doc_id": "E1E4-C0",
+    "file": "02-clean-two-errors.pdf",
+    "run_id": "5a3d538a6ac54320a0dc97b75561926c",
+    "error": null,
+    "field_matches": {
+      "consignee": true,
+      "hs_code": true,
+      "port_of_loading": true,
+      "port_of_discharge": true,
+      "incoterms": true,
+      "goods_description": true,
+      "gross_weight": true,
+      "invoice_number": true
+    },
+    "field_details": {
+      "consignee": [
+        "match",
+        "match"
+      ],
+      "hs_code": [
+        "mismatch",
+        "mismatch"
+      ],
+      "port_of_loading": [
+        "match",
+        "match"
+      ],
+      "port_of_discharge": [
+        "match",
+        "match"
+      ],
+      "incoterms": [
+        "match",
+        "match"
+      ],
+      "goods_description": [
+        "match",
+        "match"
+      ],
+      "gross_weight": [
+        "mismatch",
+        "mismatch"
+      ],
+      "invoice_number": [
+        "match",
+        "match"
+      ]
+    },
+    "outcome": "amendment_requested",
+    "acceptable_outcomes": [
+      "amendment_request",
+      "human_review"
+    ],
+    "outcome_acceptable": true,
+    "llm_calls": 6,
+    "fallback_used": true
+  },
+  {
+    "doc_id": "V2-C3",
+    "file": "03-messy-scan.pdf",
+    "run_id": "608725a3850f442e8bf2c33acc85a479",
+    "error": null,
+    "field_matches": {
+      "consignee": true,
+      "hs_code": true,
+      "port_of_loading": true,
+      "port_of_discharge": true,
+      "incoterms": true,
+      "goods_description": true,
+      "gross_weight": true,
+      "invoice_number": true
+    },
+    "field_details": {
+      "consignee": [
+        "match",
+        "match"
+      ],
+      "hs_code": [
+        "match",
+        "match"
+      ],
+      "port_of_loading": [
+        "match",
+        "match"
+      ],
+      "port_of_discharge": [
+        "match",
+        "match"
+      ],
+      "incoterms": [
+        "match",
+        "match"
+      ],
+      "goods_description": [
+        "match",
+        "match"
+      ],
+      "gross_weight": [
+        "match",
+        "match"
+      ],
+      "invoice_number": [
+        "match",
+        "match"
+      ]
+    },
+    "outcome": "auto_approved",
+    "acceptable_outcomes": [
+      "auto_approve",
+      "human_review"
+    ],
+    "outcome_acceptable": true,
+    "llm_calls": 6,
+    "fallback_used": true
+  }
+]
