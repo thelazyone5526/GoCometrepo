@@ -35,10 +35,12 @@ from app.store.db import connect, db_path
 from .schemas import (
     CreateRunResponse,
     CustomerOut,
+    LlmCallOut,
     QueryAnswerOut,
     QueryRequest,
     RunDetailOut,
     RunSummaryOut,
+    llm_call_from_row,
     query_answer_from_result,
     run_detail_from_row,
 )
@@ -109,6 +111,24 @@ def get_run(run_id: str) -> RunDetailOut:
             raise HTTPException(status_code=404, detail=f"No such run: {run_id}")
         field_rows = repo.list_field_results(conn, run_id)
         return run_detail_from_row(row, field_rows)
+    finally:
+        conn.close()
+
+
+@router.get("/runs/{run_id}/llm-calls", response_model=list[LlmCallOut])
+def get_run_llm_calls(run_id: str) -> list[LlmCallOut]:
+    """Every logged attempt at every LLM call made during this run (design section 3.6),
+    oldest first -- the evidence behind the run's own summary counters (`llm_calls`,
+    `fallback_used`, token totals) on `RunDetailOut`. A failed attempt followed by a
+    successful retry, or a call made against the fallback model, both show up here as
+    separate rows."""
+    conn = connect()
+    try:
+        row = repo.get_run(conn, run_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"No such run: {run_id}")
+        call_rows = repo.list_llm_calls(conn, run_id)
+        return [llm_call_from_row(r) for r in call_rows]
     finally:
         conn.close()
 

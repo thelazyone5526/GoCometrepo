@@ -79,6 +79,26 @@ class RunDetailOut(BaseModel):
     field_results: list[FieldResultOut] = []
 
 
+class LlmCallOut(BaseModel):
+    """One row from `llm_calls` (design section 3.6): a single attempt at a single LLM call,
+    whichever agent made it. `is_fallback` marks a call made against the fallback model
+    rather than the primary one; `attempt` is 1 for a call's first try, 2+ for a retry of
+    that same logical call."""
+
+    agent: str
+    model: str
+    is_fallback: bool
+    prompt_version: str
+    attempt: int
+    status: str
+    input_tokens: int
+    output_tokens: int
+    thinking_tokens: int
+    latency_ms: float
+    error: str | None
+    created_at: str
+
+
 class CreateRunResponse(BaseModel):
     run_id: str | None
     status: str
@@ -146,6 +166,23 @@ def query_answer_from_result(answer: object) -> QueryAnswerOut:
     # "refused" (design section 8: "query not allowed" / the SQL that failed).
     return QueryAnswerOut(
         answer=answer.error, explanation=answer.explanation, sql=answer.sql, columns=[], rows=[]
+    )
+
+
+def llm_call_from_row(row: sqlite3.Row) -> LlmCallOut:
+    return LlmCallOut(
+        agent=row["agent"],
+        model=row["model"],
+        is_fallback=bool(row["is_fallback"]),
+        prompt_version=row["prompt_version"],
+        attempt=row["attempt"],
+        status=row["status"],
+        input_tokens=row["input_tokens"],
+        output_tokens=row["output_tokens"],
+        thinking_tokens=row["thinking_tokens"],
+        latency_ms=row["latency_ms"],
+        error=row["error"],
+        created_at=row["created_at"],
     )
 
 

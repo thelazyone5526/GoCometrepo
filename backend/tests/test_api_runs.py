@@ -358,6 +358,41 @@ def test_get_run_page_404_for_unknown_page_number(client, fake_transport) -> Non
     assert page_response.status_code == 404
 
 
+# --- GET /api/runs/{run_id}/llm-calls --------------------------------------------------------
+
+
+def test_get_run_llm_calls_lists_every_call_in_order(client, fake_transport) -> None:
+    """One call per node (extract, validate, route), oldest first -- backs the run's own
+    `llm_calls`/`fallback_used`/token-total summary fields with the individual attempts that
+    produced them."""
+    _queue_clean_run(fake_transport)
+    file_path = SUBMISSION / "01-clean-correct.pdf"
+    with file_path.open("rb") as fh:
+        response = client.post(
+            "/api/runs",
+            files={"file": ("01-clean-correct.pdf", fh, "application/pdf")},
+            data={"customer_id": "acme"},
+        )
+    run_id = response.json()["run_id"]
+    _poll_until_completed(client, run_id)
+
+    calls_response = client.get(f"/api/runs/{run_id}/llm-calls")
+    assert calls_response.status_code == 200
+    calls = calls_response.json()
+    assert [c["agent"] for c in calls] == ["extract", "validate", "route"]
+    for call in calls:
+        assert call["model"] == PRIMARY
+        assert call["is_fallback"] is False
+        assert call["status"] == "success"
+        assert call["input_tokens"] > 0
+        assert call["latency_ms"] >= 0
+
+
+def test_get_run_llm_calls_404_for_unknown_id(client) -> None:
+    response = client.get("/api/runs/does-not-exist/llm-calls")
+    assert response.status_code == 404
+
+
 # --- POST /api/query -------------------------------------------------------------------------
 # Wired to app.query.service.answer_question (Phase 11) once both sessions' work was
 # reconciled -- see docs/progress.md. Runs against the real data_dir's app.db (patched to
@@ -419,6 +454,7 @@ def test_openapi_schema_lists_every_endpoint(client) -> None:
         "/api/customers",
         "/api/runs",
         "/api/runs/{run_id}",
+        "/api/runs/{run_id}/llm-calls",
         "/api/runs/{run_id}/pages/{page_number}",
         "/api/query",
     }

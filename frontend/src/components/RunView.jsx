@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getRun } from '../api/api.js'
+import CallLogTable from './CallLogTable.jsx'
 import DecisionCard from './DecisionCard.jsx'
 import FieldTable from './FieldTable.jsx'
 import ProgressSteps from './ProgressSteps.jsx'
@@ -66,6 +67,7 @@ function RunView({ runId }) {
         <h2 id="fields-heading">Fields</h2>
         <FieldTable fieldResults={run.field_results} />
       </section>
+      {run.llm_calls > 0 && <CallLogTable runId={run.id} />}
     </div>
   )
 }

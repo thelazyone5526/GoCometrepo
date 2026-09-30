@@ -53,6 +53,26 @@ function DecisionCard({ run }) {
           <strong>Overridden by code.</strong> {run.override_reason}
         </p>
       )}
+      <dl className="run-metrics" aria-label="LLM usage for this run">
+        <div className="run-metrics__item">
+          <dt>LLM calls</dt>
+          <dd>{run.llm_calls}</dd>
+        </div>
+        <div className="run-metrics__item">
+          <dt>Tokens (in / out)</dt>
+          <dd>
+            {run.input_tokens.toLocaleString()} / {run.output_tokens.toLocaleString()}
+          </dd>
+        </div>
+        <div className="run-metrics__item">
+          <dt>Latency</dt>
+          <dd>{(run.latency_ms / 1000).toFixed(1)}s</dd>
+        </div>
+        <div className="run-metrics__item">
+          <dt>Fallback model used</dt>
+          <dd>{run.fallback_used ? 'Yes' : 'No'}</dd>
+        </div>
+      </dl>
     </section>
   )
 }

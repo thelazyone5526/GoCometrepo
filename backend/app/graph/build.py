@@ -43,9 +43,9 @@ def build_graph(*, conn: sqlite3.Connection, recorder: CallRecorder, checkpointe
     graph = StateGraph(RunState)
 
     graph.add_node("prepare", prepare_node)
-    graph.add_node("extract", lambda s: extract_node(s, recorder=recorder))
-    graph.add_node("validate", lambda s: validate_node(s, recorder=recorder))
-    graph.add_node("route", lambda s: route_node(s, recorder=recorder))
+    graph.add_node("extract", lambda s: extract_node(s, conn=conn, recorder=recorder))
+    graph.add_node("validate", lambda s: validate_node(s, conn=conn, recorder=recorder))
+    graph.add_node("route", lambda s: route_node(s, conn=conn, recorder=recorder))
     graph.add_node("persist", lambda s: persist_node(s, conn=conn, recorder=recorder))
     graph.add_node("escalate", lambda s: escalate_node(s, conn=conn, recorder=recorder))
 

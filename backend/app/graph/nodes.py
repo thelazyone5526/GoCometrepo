@@ -104,10 +104,11 @@ def _make_client(state: dict[str, Any], *, recorder: CallRecorder) -> tuple[LLMC
     return client, budget
 
 
-def extract_node(state: dict[str, Any], *, recorder: CallRecorder) -> dict[str, Any]:
+def extract_node(state: dict[str, Any], *, conn: Any, recorder: CallRecorder) -> dict[str, Any]:
     """Design section 3.1: Agent 1. The 300 DPI retry callback (design section 3.3 step 7,
     noted as a Phase 8 job in the Phase 5 handoff) closes over the original upload bytes,
     which this node -- unlike `extract()` itself -- does hold."""
+    repo.update_run_step(conn, run_id=state["run_id"], step="extract")
     try:
         pages = [page_from_dict(p) for p in state["pages"]]
         client, budget = _make_client(state, recorder=recorder)
@@ -129,8 +130,9 @@ def extract_node(state: dict[str, Any], *, recorder: CallRecorder) -> dict[str, 
         return {"error": f"extract failed: {exc}", "current_step": "extract"}
 
 
-def validate_node(state: dict[str, Any], *, recorder: CallRecorder) -> dict[str, Any]:
+def validate_node(state: dict[str, Any], *, conn: Any, recorder: CallRecorder) -> dict[str, Any]:
     """Design section 3.1: Agent 2."""
+    repo.update_run_step(conn, run_id=state["run_id"], step="validate")
     try:
         from app.rules.loader import RuleSet
 
@@ -149,10 +151,11 @@ def validate_node(state: dict[str, Any], *, recorder: CallRecorder) -> dict[str,
         return {"error": f"validate failed: {exc}", "current_step": "validate"}
 
 
-def route_node(state: dict[str, Any], *, recorder: CallRecorder) -> dict[str, Any]:
+def route_node(state: dict[str, Any], *, conn: Any, recorder: CallRecorder) -> dict[str, Any]:
     """Design section 3.1: Agent 3. Unlike `extract`/`validate`, this node never escalates on
     an LLM failure -- `route()` already falls back to a safe `human_review` decision on its
     own (design section 3.5/3.6), so there's nothing left here that would count as an error."""
+    repo.update_run_step(conn, run_id=state["run_id"], step="route")
     fields = validation_fields_from_dict(state["validation"])
     client, budget = _make_client(state, recorder=recorder)
     decision = run_route(fields=fields, client=client)
