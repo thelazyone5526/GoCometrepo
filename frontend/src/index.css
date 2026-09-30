@@ -14,3 +14,316 @@ main {
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+:focus-visible {
+  outline: 3px solid #1a56c4;
+  outline-offset: 2px;
+}
+
+button,
+select,
+input[type='file'] {
+  font: inherit;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #1a56c4;
+  border-radius: 4px;
+  background: #1a56c4;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #143f94;
+}
+
+button:disabled {
+  background: #9aa5b1;
+  border-color: #9aa5b1;
+  cursor: not-allowed;
+}
+
+.card {
+  border: 1px solid #d7dbe0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.layout__sidebar {
+  flex: 0 0 22rem;
+}
+
+.layout__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.field-row--checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.field-row--checkbox label {
+  margin: 0;
+}
+
+.field-row label {
+  font-weight: 600;
+}
+
+.error-text {
+  color: #a4160a;
+  font-weight: 600;
+}
+
+.run-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.run-list-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  background: #f5f6f8;
+  color: #1a1a1a;
+  border: 1px solid #d7dbe0;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+
+.run-list-item:hover {
+  background: #eceff2;
+}
+
+.run-list-item--selected {
+  border-color: #1a56c4;
+  background: #e8f0fd;
+}
+
+.run-list-item__filename {
+  font-weight: 600;
+}
+
+.run-list-item__customer {
+  font-size: 0.85rem;
+  color: #4a5261;
+}
+
+.outcome-badge {
+  display: inline-block;
+  margin-top: 0.15rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.outcome-badge--auto_approved {
+  background: #e3f6e8;
+  color: #1c6b32;
+  border-color: #1c6b32;
+}
+
+.outcome-badge--human_review {
+  background: #fff2e0;
+  color: #8a5300;
+  border-color: #8a5300;
+}
+
+.outcome-badge--amendment_requested {
+  background: #fdeaea;
+  color: #a4160a;
+  border-color: #a4160a;
+}
+
+.outcome-badge--processing {
+  background: #e8eefc;
+  color: #1a56c4;
+  border-color: #1a56c4;
+}
+
+.progress-steps {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #6b7280;
+}
+
+.progress-step__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 2px solid #6b7280;
+  font-size: 0.85rem;
+}
+
+.progress-step--done {
+  color: #1c6b32;
+}
+
+.progress-step--done .progress-step__marker {
+  border-color: #1c6b32;
+  background: #e3f6e8;
+}
+
+.progress-step--current {
+  color: #1a56c4;
+  font-weight: 600;
+}
+
+.progress-step--current .progress-step__marker {
+  border-color: #1a56c4;
+  background: #e8f0fd;
+}
+
+.decision-outcome {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+}
+
+.decision-outcome--auto_approved {
+  color: #1c6b32;
+}
+
+.decision-outcome--human_review {
+  color: #8a5300;
+}
+
+.decision-outcome--amendment_requested {
+  color: #a4160a;
+}
+
+.decision-reason {
+  font-style: italic;
+}
+
+.decision-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.decision-meta dt {
+  font-weight: 600;
+}
+
+.decision-meta dd {
+  margin: 0;
+}
+
+.override-label {
+  background: #fff2e0;
+  border: 1px solid #8a5300;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.reasoning-text {
+  white-space: pre-wrap;
+}
+
+.amendment-draft__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.amendment-draft__text {
+  background: #f5f6f8;
+  border: 1px solid #d7dbe0;
+  border-radius: 6px;
+  padding: 1rem;
+  white-space: pre-wrap;
+  font-family: inherit;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.field-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.field-table th,
+.field-table td {
+  border: 1px solid #d7dbe0;
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.field-table thead th {
+  background: #f5f6f8;
+}
+
+.field-table th[scope='row'] {
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.verdict-cell--match {
+  color: #1c6b32;
+  font-weight: 600;
+}
+
+.verdict-cell--mismatch {
+  color: #a4160a;
+  font-weight: 600;
+}
+
+.verdict-cell--uncertain {
+  color: #8a5300;
+  font-weight: 600;
+}
+
+.verdict-cell--not_applicable {
+  color: #6b7280;
+}
