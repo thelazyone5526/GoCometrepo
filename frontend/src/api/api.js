@@ -67,9 +67,20 @@ export async function getRun(runId) {
 }
 
 /**
- * POST /api/query (question) — stubbed per the assignment's scope cut (design §7 "Ask" panel
- * UI is explicitly out of scope for this pass). Wired to the mock so the function shape is
- * ready, but no UI calls it yet.
+ * GET /api/runs/{id}/llm-calls — every logged LLM call attempt for this run (agent, model,
+ * fallback/retry, tokens, latency). Backs the call-log table in the run view; not part of
+ * `getRun()`'s own response since a run can have many calls and the summary view doesn't
+ * need them.
+ */
+export async function getRunLlmCalls(runId) {
+  if (USE_MOCK) return []
+  return asJson(await fetch(`/api/runs/${encodeURIComponent(runId)}/llm-calls`))
+}
+
+/**
+ * POST /api/query (question) — the plain-English "ask a question" endpoint (design §5),
+ * called by `AskPanel`. Each real call spends one Gemini call (question -> SQL), so this
+ * only fires when the operator actually asks something, never on page load.
  */
 export async function postQuery(question) {
   if (USE_MOCK) return mockQuery(question)

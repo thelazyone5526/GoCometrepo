@@ -432,3 +432,99 @@ python -m app.cli resume
 - `app.graph.build.run_document()` and `resume_incomplete_runs()` are what the API's `POST /api/runs` and start-up hook should call -- the CLI (`app/cli.py`) already shows the exact call shape needed (open a `connect()`, a `SqliteSaver` checkpointer, look up or create the shipment/document via `app.store.repository`, then call `run_document`).
 - The repository's `find_document_by_hash()` is the duplicate-upload check design section 3.7 and the API's `POST /api/runs` (design section 6) both need.
 - `repo.get_run()` and `repo.list_field_results()`/`list_llm_calls()` are the reads `GET /api/runs/{id}` needs; `repo.list_runs()` is what `GET /api/runs` needs.
+
+## Backend follow-up: LLM call log endpoint and CLI dump
+
+Status: **done, 2026-09-30 (separate session, after Phases 9-13's initial pass).**
+
+The run's summary numbers (`llm_calls`, `fallback_used`, token totals, latency) were already
+stored and returned by `GET /api/runs/{id}`, but nothing showed the individual call attempts
+behind those totals -- which agent made each call, whether it was a retry or a fallback-model
+call, its own tokens and latency. Added once the screen needed somewhere to show that
+evidence (see `11-operator-ui.md`'s note on this and the "Frontend follow-up" entry below).
+
+### What was built
+
+- `backend/app/api/schemas.py`: `LlmCallOut` and `llm_call_from_row()`.
+- `backend/app/api/routes.py`: `GET /api/runs/{run_id}/llm-calls`, returning every logged
+  attempt for that run, oldest first, or 404 for an unknown run ID.
+- `backend/app/cli.py`: `python -m app.cli dump-llm-calls`, writing every run's call log to a
+  Markdown file (`data/llm-calls-report.md` by default) -- the same data the endpoint serves,
+  readable without running the app or a browser. `eval/reports/llm-calls-sample.md` is a
+  checked-in example, generated from real runs made while building this.
+- `backend/app/graph/nodes.py` / `build.py`: `extract_node`/`validate_node`/`route_node` now
+  also call `repo.update_run_step()` at their own start (previously only `prepare_node` did,
+  via the initial insert), so a run's `current_step` reflects whichever step is actually
+  in flight, not just "prepare" until the whole run finishes. Needs the `conn` each node
+  didn't previously take, threaded through from `build_graph()`.
+- Frontend: `CallLogTable.jsx` (a collapsed-by-default table on the run view, fetched lazily
+  on first expand) and a `run-metrics` strip on `DecisionCard.jsx` (call count, tokens,
+  latency, whether the fallback model was used).
+- `backend/tests/test_api_runs.py`: two new tests (every call listed in order with the right
+  shape; 404 on an unknown run ID) plus the new route added to the OpenAPI-schema coverage
+  test.
+
+### Verified
+
+- Full backend suite: 13,430 passed, 5 deselected (live), ruff clean.
+- `npm run build` and `npm run lint`: clean (pre-existing, unrelated `setState`-in-effect
+  warning in `App.jsx` only).
+
+### Decisions and deviations
+
+- `current_step` updates happen inside each node itself, right before its own work starts,
+  rather than the graph wrapping every node with a generic "mark this step active" step --
+  keeps each node's own responsibility (and its `conn` dependency) explicit at the call site.
+
+### Known issues
+
+- No new real failures.
+
+## Frontend follow-up: Ask box wired into the screen
+
+Status: **done, 2026-09-30 (separate session, after Phases 9-13's initial pass).**
+
+Phase 10's original scope cut this area out (see "Scope cuts for this session" at the top of
+this file: "the query layer's own Ask panel UI is out of scope for this pass"). The backend
+endpoint (`POST /api/query`, Phase 11) was already built, tested and reachable from
+`frontend/src/api/api.js`'s `postQuery()`, but no component ever called it.
+
+### What was built
+
+- `frontend/src/components/AskPanel.jsx`: a question input, three clickable example
+  questions (from `query_v1`'s worked examples), and a result area that shows either a
+  single value or a results table, always followed by the explanation sentence and a
+  collapsible "SQL used" block — including on a refusal, so a denied query still shows what
+  was tried (design section 8).
+- Wired into `App.jsx` as the third area of the screen (design section 7 area 3 / section 2's
+  diagram), alongside the existing upload/history and run-view areas.
+- CSS additions in `index.css` for the example-question buttons and the result table.
+
+### Verified
+
+- `npm run lint` (oxlint): clean (one pre-existing, unrelated warning in `App.jsx` about
+  `setState` inside an effect, present before this change).
+- `npm run build` (vite): succeeds, 28 modules transformed.
+- Not covered: no live run against the real API was made as part of this change (that would
+  spend a real Gemini call); the component was checked against the existing `QueryAnswerOut`
+  shape in `backend/app/api/schemas.py` and `postQuery()`'s existing fetch call, both already
+  covered by the backend's own tests (`test_query_service.py`, `test_query_gate.py`).
+
+### Decisions and deviations
+
+- The panel always renders (not conditionally shown only after a run completes), since
+  asking a question isn't tied to any one run — it queries across everything stored so far,
+  matching design section 5's framing ("a person types a question... about the stored data").
+- A query is refused vs answered is told apart by shape alone (`sql === null` with no columns
+  or rows means refused), matching `QueryAnswerOut`'s existing shape rather than adding a new
+  field to the backend response.
+
+### Known issues
+
+- No new real failures.
+
+### Open reminders
+
+- Everything from Phases 1-13 still stands (key rotation, free-tier limits, PRD numbers,
+  the still-unwritten write-up, PRD Section 1, demo video, sample-queries file, and an actual
+  eval run against the real API for real numbers).

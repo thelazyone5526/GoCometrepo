@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createRun, getCustomers, listRuns } from './api/api.js'
+import AskPanel from './components/AskPanel.jsx'
 import RunList from './components/RunList.jsx'
 import RunView from './components/RunView.jsx'
 import UploadPanel from './components/UploadPanel.jsx'
 
-// The operator UI (design §7), replacing the Phase 1 health-check placeholder. One page,
-// three areas per §7: upload + history (area 1), run view (area 2). The third area, Ask
-// (§7 area 3), is out of scope for this pass — see api.js's `postQuery`, which is stubbed
-// but not wired into any component.
+// The operator UI (design §7). One page, three areas per §7: upload + history (area 1),
+// run view (area 2), Ask (area 3, `AskPanel`) — wired to the real `POST /api/query`
+// endpoint, which was already built and tested (Phase 11) but had no UI caller until now.
 function App() {
   const [customers, setCustomers] = useState([])
   const [runs, setRuns] = useState([])
@@ -30,6 +30,16 @@ function App() {
       .catch((err) => setLoadError(err.message))
     refreshRuns()
   }, [refreshRuns])
+
+  // The list itself has no push updates, so poll while any run is still processing.
+  // Without this, a run's sidebar entry freezes at whatever step it was on when the
+  // list was last fetched (e.g. "In progress (prepare)") even after it completes.
+  useEffect(() => {
+    const hasProcessingRun = runs.some((run) => run.status === 'processing')
+    if (!hasProcessingRun) return
+    const timer = setTimeout(refreshRuns, 2000)
+    return () => clearTimeout(timer)
+  }, [runs, refreshRuns])
 
   async function handleStartRun({ file, customerId, rerun }) {
     setIsSubmitting(true)
@@ -75,6 +85,7 @@ function App() {
           ) : (
             <p>Select a run from the list, or start a new one.</p>
           )}
+          <AskPanel />
         </div>
       </div>
     </main>

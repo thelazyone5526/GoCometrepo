@@ -1,3 +1,4 @@
+
 # Trade Document Pipeline (GoComet Full Stack AI Engineer assignment, Part 1)
 
 A small system that reads a trade document (a commercial invoice, for now), checks it against
@@ -8,7 +9,7 @@ Gemini model through a free API key, and stores everything in a single local SQL
 The full design is in [`docs/design-architecture.md`](docs/design-architecture.md); the order
 of work is in [`docs/implementation-plan.md`](docs/implementation-plan.md); a plain-language
 walkthrough of every piece, written to be learned from, is in [`Ansh/`](../Ansh/) (numbered
-`02` through `09` so far, in build order). This README is the "how do I actually run it" doc.
+`02` onward, in build order). This README is the "how do I actually run it" doc.
 
 ## What's built so far
 
@@ -22,17 +23,18 @@ walkthrough of every piece, written to be learned from, is in [`Ansh/`](../Ansh/
 | 6 | Rules loader and Validator agent | Done |
 | 7 | Router agent and guardrails | Done |
 | 8 | LangGraph pipeline, SQLite storage, CLI | Done |
-| 9 | API (FastAPI) | In progress (parallel session) |
-| 10 | Operator UI (React) | In progress (parallel session), bare-bones scope |
-| 11 | Plain-English query layer | In progress (parallel session), minimal scope |
-| 12 | Offline eval | Planned: a smoke run on the 3 submission samples, not the full 28-document grid |
-| 13 | Submission package (write-up, PRD numbers, video) | Not started |
+| 9 | API (FastAPI) | Done |
+| 10 | Operator UI (React), wired to the real API | Done, bare-bones scope |
+| 11 | Plain-English query layer | Done, minimal scope |
+| 12 | Offline eval | Done, reduced scope: a smoke run on the 3 submission samples, not the full 28-document grid |
+| 13 | Submission package (write-up, PRD numbers, video) | Partial: README and the design/progress docs are done; the write-up, final PRD numbers and demo video still need Ansh directly |
 
-Phases 9-11 were split across parallel work sessions to meet a tight deadline; see
-`docs/progress.md` for exactly what was cut from each phase's original scope and why. **The
-sections below marked "once Phase 9/10/11 lands" describe the intended behaviour per the
-design doc, and will be double-checked against what those sessions actually built before this
-README is considered final.**
+Phases 9-11 were originally split across parallel work sessions to meet a tight deadline; see
+`docs/progress.md` for exactly what was cut from each phase's original scope and why, and for
+how the parallel sessions' output (the UI's mock data, the query layer's fixture database)
+was reconciled against the real backend once Phase 9 landed. The frontend's `USE_MOCK` flag
+(`frontend/src/api/api.js`) is now `false` — the UI talks to the real API, not the mock data
+in `mockData.js` (kept only as a reference for the shapes the UI expects).
 
 ## Requirements
 
@@ -92,11 +94,69 @@ npm install
 
 ## Running it
 
-### Right now: the command line
+### The full app: API + UI
 
-Phases 9-11 (the API, the UI, and the plain-English query layer) are still catching up as of
-this README. Until then, the full pipeline — page preparation through the three agents to a
-stored decision — runs end to end from the CLI:
+```powershell
+# Terminal 1: the backend API (binds to 127.0.0.1:8000 only — no login, so it must not be
+# reachable from other machines)
+cd backend
+.venv\Scripts\python -m app.main
+
+# Terminal 2: the frontend dev server (proxies /api to the backend, no CORS setup needed)
+cd frontend
+npm run dev
+```
+
+Then open http://localhost:5173. Pick "ACME Electronics Pte. Ltd.", upload one of the three
+files in `samples/submission/`, and watch the run:
+1. The progress steps (prepare → extract → validate → route) update as the run advances,
+   polled once a second.
+2. The decision card shows the outcome, a one-line reason, the decision source
+   (`llm` / `code_override` / `fallback`), and match/mismatch/uncertain counts.
+3. The full reasoning is shown, and — for a document with a discrepancy — the amendment
+   draft, with a copy button.
+4. The field table lists every field's value, both confidences, its verdict (shown with an
+   icon as well as text, not colour alone), found vs expected, and the rule ID.
+
+The API's own interactive docs are at http://127.0.0.1:8000/docs.
+
+Once `frontend/dist` exists (`npm run build`), the backend serves the built frontend itself,
+so the whole app then runs from a single command (`python -m app.main`) with no separate dev
+server needed.
+
+5. The Ask box at the bottom of the screen answers plain-English questions about everything
+   stored so far — see "The Ask box" below.
+
+Every run's decision card also shows an LLM usage strip (call count, input/output tokens,
+total latency, whether the fallback model was used), and an "LLM call log" section below the
+field table — collapsed by default — lists every individual call attempt: which agent made
+it, which model, whether it was a retry or a fallback-model call, and its own tokens and
+latency. This is the evidence behind the run's own summary numbers: a document that hit the
+free-tier rate limit, for example, shows up here as a few `retryable_error` rows against the
+primary model followed by a `success` row against the fallback model, for whichever agent
+got rate-limited.
+
+**Out of scope for this pass** (see `docs/progress.md`'s scope-cut notes): the evidence
+viewer that highlights the matched text on the page image.
+
+### LLM call log, without running the app
+
+For anyone reading this project from a zip rather than running it, the same call-log data is
+readable straight from a file rather than through the UI:
+
+```powershell
+cd backend
+.venv\Scripts\python -m app.cli dump-llm-calls
+```
+
+Writes every run currently in `data/app.db` to `data/llm-calls-report.md` (one section per
+run, one row per call attempt) — the same data `GET /api/runs/{run_id}/llm-calls` serves, just
+as a plain file. `eval/reports/llm-calls-sample.md` is a checked-in example of this output,
+generated from the demo runs made while building the project.
+
+### Just the pipeline: the command line
+
+The CLI still works independently of the API, and is what the eval script uses:
 
 ```powershell
 cd backend
@@ -117,44 +177,41 @@ If the process is interrupted partway through, resume every unfinished run with:
 .venv\Scripts\python -m app.cli resume
 ```
 
+To read back every run's LLM call log as a Markdown file, without a browser or a SQL client:
+
+```powershell
+.venv\Scripts\python -m app.cli dump-llm-calls
+```
+
+The API does the same resume automatically on start-up, so a crash mid-run doesn't leave it
+stuck in `processing` forever after a restart either.
+
 Uploaded files, rendered page images and both database files live under `data/`, which is
 git-ignored — delete the whole folder any time to reset to a clean state.
 
-### Once Phase 9 lands: the API and UI
-
-<!-- TODO: verify these commands once the Phase 9 (API) and Phase 10 (UI) sessions report
-     back — this is the intended shape per design §6/§9/§11, not yet confirmed against what
-     was actually built. -->
-
-```powershell
-# Terminal 1: the backend API (binds to 127.0.0.1:8000 only — no login, so it must not be
-# reachable from other machines)
-cd backend
-.venv\Scripts\python -m app.main
-
-# Terminal 2: the frontend dev server (proxies /api to the backend, no CORS setup needed)
-cd frontend
-npm run dev
-```
-
-Then open http://localhost:5173. Upload one of the three files in `samples/submission/`,
-watch the pipeline run, and see the decision, the field-by-field breakdown, and (for a
-document with a discrepancy) the amendment draft.
-
-Once `frontend/dist` exists (`npm run build`), the backend serves the built frontend itself,
-so after that one build the whole app runs from a single command
-(`python -m app.main`) with no separate dev server needed.
-
 ### The Ask box (plain-English questions)
 
-<!-- TODO: verify this once the query-layer (Phase 11) session reports back. -->
+`POST /api/query` (design section 5) turns a question like "How many documents were flagged
+for review this week?" into a read-only SQL query with Gemini, runs it through a safety gate
+(single statement only, a read-only connection, an allow-list of exactly two summary views,
+never the raw tables, a query timeout, and a row limit), and returns the answer alongside the
+SQL itself so it's never a black box. The endpoint is live and tested
+(`backend/tests/test_query_service.py`, `test_query_gate.py`), and the operator screen's Ask
+panel (`frontend/src/components/AskPanel.jsx`) calls it directly — type a question, or click
+one of the example questions, and get back an answer or a table, the explanation, and the SQL
+that produced it. Each real question spends one Gemini call.
 
-Once wired into the UI, a question like "How many documents were flagged for review this
-week?" gets turned into a read-only SQL query by Gemini, run against two safe summary views
-(never the raw tables), and shown alongside the query itself so the answer is never a black
-box. See `docs/design-architecture.md` section 5 for the full design, including the safety
-gate (single statement only, read-only connection, an allow-list of exactly two views, a query
-timeout, and a row limit).
+### Offline eval
+
+```powershell
+# From the repo root. Real Gemini calls (~10-12 total) against the free tier.
+backend\.venv\Scripts\python -m eval.run_eval
+```
+
+Runs the 3 submission samples through the real pipeline, scores each field's verdict and the
+final outcome against its `.answer.json`, and writes `eval/reports/submission-smoke-run.md`
+and `.json`. This is a reduced-scope stand-in for the design's full 28-document grid (see
+`docs/progress.md`); it is never run automatically and does spend real quota.
 
 ## Tests
 
@@ -172,11 +229,12 @@ cd backend
 .venv\Scripts\ruff format --check . ..\samples --config pyproject.toml
 ```
 
-As of Phase 8, the non-live suite has around 13,000 tests (dominated by one deliberately
-exhaustive test: every combination of match/mismatch/uncertain across the 8 fields, checking
-that the Router never auto-approves unless every field genuinely matched). All of it runs
-against a scripted fake LLM transport — no test in the default run ever makes a real network
-call or spends Gemini quota.
+The non-live suite has over 13,000 tests (dominated by one deliberately exhaustive test:
+every combination of match/mismatch/uncertain across the 8 fields, checking that the Router
+never auto-approves unless every field genuinely matched), plus API tests that exercise a
+full upload-to-completion run through FastAPI's test client. All of it runs against a
+scripted fake LLM transport — no test in the default run ever makes a real network call or
+spends Gemini quota.
 
 Frontend:
 
@@ -193,9 +251,9 @@ GoCometrepo/
   README.md                 this file
   backend/
     app/
-      main.py                FastAPI app
+      main.py                FastAPI app, resumes incomplete runs on start-up
       config.py               settings, from environment variables
-      api/                     HTTP routes (Phase 9)
+      api/                     HTTP routes and response schemas
       graph/                   LangGraph state, nodes, the pipeline graph, the CLI's engine
       agents/                  Extractor, Validator, Router
       ingest/                  file checks, PDF/image rendering, OCR
@@ -203,16 +261,21 @@ GoCometrepo/
       rules/                   YAML loader and rule-type checkers
       llm/                     the Gemini client wrapper: retries, fallback, budget, prompts/
       store/                   SQLite schema, query views, the repository
-      query/                   plain-English question -> SQL (Phase 11)
+      query/                   plain-English question -> SQL, with the safety gate
       cli.py                   python -m app.cli run|resume|resume-one
     rules/acme.yaml            ACME's rules (one YAML file per customer)
     tests/
   frontend/                    Vite + React (plain JavaScript)
+    src/
+      api/                     api.js (one function per endpoint) and mockData.js (reference
+                                fixtures, unused now that USE_MOCK is false)
+      components/               upload panel, run list, progress steps, decision card,
+                                reasoning/draft, field table
   samples/                     python -m samples.generate (run from the repo root)
     grid/                      28 eval documents + answer files
     submission/                3 submission samples + answer files
     jpg/                       one image-upload test case
-  eval/                        eval runner and reports (Phase 12)
+  eval/                        eval runner (run_eval.py) and its reports/
   docs/                        design doc, implementation plan, progress log, failure log
   data/                        git-ignored: app.db, checkpoints.db, uploads/
 ```
@@ -225,11 +288,13 @@ GoCometrepo/
   rotated after being pasted into a chat during development (see `docs/progress.md`).
 - **Free-tier quota is limited.** The default Gemini model gets roughly 20 requests/day free;
   its fallback gets roughly 500/day. Tests never spend quota (they run against a scripted fake
-  transport); only `pytest -m live` and actually running the pipeline do.
+  transport); only `pytest -m live`, `eval.run_eval`, and actually running the pipeline do.
 - **Known limitations for this submission** are tracked candidly in `docs/progress.md`'s
   "Scope cuts for this session" section, rather than left implicit: the offline eval runs
-  against the 3 submission samples instead of the full 28-document grid, the UI skips the
-  evidence-box page overlay and metrics panel, and the query layer's own security test suite
-  is reduced from the design's full list. None of these cuts touch the required safety
-  behaviours (grounding, guardrails against a silent wrong approval, or the query gate's core
-  protections).
+  against the 3 submission samples instead of the full 28-document grid (so the confidence
+  threshold stays at its untuned default of 0.85), the UI still skips the evidence-box page
+  overlay, and the query layer's own security test suite is reduced from the design's full
+  list. The run metrics panel and the Ask panel UI were originally cut too but have since
+  been built (see `docs/progress.md`'s "Frontend follow-up" entry). None of these cuts touch
+  the required safety behaviours (grounding, guardrails against a silent wrong approval, or
+  the query gate's core protections).
