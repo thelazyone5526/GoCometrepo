@@ -2,7 +2,7 @@
 
 Read this at the start of every phase chat. Update it at the end of every phase.
 
-Current: **Phase 2 done.** Next: Phase 3 (page preparation). See "For Phase 3" at the end.
+Current: **Phases 3, 4 and 5 done** (built together in one chat, by exception to the "one phase per chat" rule, with the user's explicit sign-off). Next: Phase 6 (rules and Validator agent). See "For Phase 6" at the end.
 
 ## Phase 1: Setup and spikes
 
@@ -192,14 +192,91 @@ backend\.venv\Scripts\python -m samples.generate --out <dir>   # somewhere else
 
 - Everything in Phase 1's list still stands: rotate the Gemini key, read the free-tier limits, and the PRD numbers in Phase 13. On the PRD: its §6 still says "24 synthetic documents, half with seeded errors". The grid is now 28 documents, 20 of them with errors.
 
-### For Phase 3
+## Phases 3, 4 and 5: page preparation, LLM client, Extractor agent
 
-- Test inputs:
-  - C0 text layer: any `samples/grid/*-C0.pdf`.
-  - Scans: C1, C2 and C3 in `samples/grid/`.
-  - Image upload: `samples/jpg/V1-C1.jpg`.
-- The expected printed strings are in each answer file (`fields.<name>.printed`). Skip E5 in the "OCR finds the invoice number" test, because its value is null.
-- The C1 skew angle is `degradation.rotation_deg` in the answer file, counter-clockwise positive as in OpenCV (`getRotationMatrix2D`). Use it for the ±0.5° straightening test.
-- C3 images are 827×1170 px (100 DPI). Rendering the PDF at 200 DPI upsamples them 2×. C1 and C2 are 1654×2339 px (200 DPI).
-- Every scan PDF has exactly one embedded JPEG. `page.get_images()` finds it, and `extract_image` returns the original bytes.
-- RapidOCR took about 2.5–3.2 s per scan page on this laptop, with the engine already loaded and no clean-up step (measured in the throwaway check).
+Status: **done, 2026-09-30.** Built together in one chat, at the user's explicit request, overriding the plan's "one phase per chat" rule for this chat only. Not yet committed as of this writing — commits happen after the user reviews and approves, one commit per phase, in order (Phase 3, then 4, then 5).
+
+### What was built (Phase 3, item 2)
+
+- `backend/app/ingest/`:
+  - `files.py`: upload checks (magic-byte type sniffing, 10 MB / 5 page limits), file hashing, content-addressed storage under `data/uploads/<hash>/`.
+  - `render.py`: PDF pages and PNG/JPG uploads rendered to RGB images at a fixed DPI (200 by default, 300 for Phase 5's retry). `RenderedPage` carries the page's `pymupdf.Page` reference for digital pages, avoiding a second PDF open.
+  - `textlayer.py`: a PDF page counts as digital at ≥30 non-space characters; its lines become `TextSpan`s (text, pixel box, confidence 1.0) via PyMuPDF's own line grouping.
+  - `cleanup.py`: scan clean-up (OpenCV) — grayscale, straighten (projection-profile skew search, coarse then fine), denoise, raise contrast (CLAHE).
+  - `ocr.py`: a shared, lazily-created RapidOCR engine; `run_ocr()` returns line-level `TextSpan`s from the cleaned image.
+  - `pages.py`: `prepare_pages()`, the entry point — dispatches each page to the text-layer or OCR path, and computes page quality stats (average confidence, low-confidence share).
+- `backend/tests/test_ingest.py` (45 tests).
+
+### What was built (Phase 4, item 8)
+
+- `backend/app/llm/`:
+  - `transport.py`: the `Transport` protocol and its error types (`RetryableTransportError`, `NonRetryableTransportError`), decoupling the client from `google-genai`.
+  - `gemini_transport.py`: the real transport. Parses `google.rpc.RetryInfo`'s `retryDelay` off a 429 when present; SDK retries and automatic function calling both disabled.
+  - `fake_transport.py`: a scripted transport for tests — queue `RawResponse`s or `TransportError`s per model; never touches the network.
+  - `client.py`: `LLMClient.generate()` — the single entry point. Retries (2, with backoff or the API's suggested delay), falls back to a second model once the primary's retries are exhausted or a 429's suggested delay exceeds the timeout, enforces a 6-call budget, records every attempt. A non-retryable 4xx short-circuits straight to `LLMUnavailableError` without ever trying the fallback.
+  - `budget.py`, `recorder.py`, `errors.py`: the call budget, the in-memory call log, and the two errors a node ever sees (`BudgetExceededError`, `LLMUnavailableError`).
+  - `cache.py`: `CachingTransport`, the dev/eval response cache (item 7), keyed by model, prompt version and input hash. Off in the app; used by the live tests and (later) the eval runner.
+  - `prompt_files.py`: loads `llm/prompts/<name>.txt`, each starting with `version: N` then `---`.
+  - `llm/prompts/ping_v1.txt`: a minimal prompt used only to exercise the wrapper's own tests.
+- `backend/tests/test_llm_client.py` (15 tests, `FakeTransport` only), `test_llm_cache.py` (3), `test_prompt_files.py` (3), `test_llm_client_live.py` (2, `live`-marked, cached under `data/llm_cache/live_test/`).
+
+### What was built (Phase 5, items 3 and 4)
+
+- `backend/app/trust/`:
+  - `fields.py`: `FIELD_NAMES` and `DocumentType`, shared by the schema, normalisers and (later) the Validator.
+  - `normalise.py`: one normaliser per field. Text fields normalise to the printed text, trimmed; `text_comparison_key()` is the separate case/punctuation-insensitive key used only for *comparing* two text values.
+  - `formats.py`: per-field format checks (HS code digit count, the 11 Incoterms 2020 codes, weight has a unit, invoice number non-empty).
+  - `grounding.py`: `ground_field()` — searches one or two adjacent spans, on the model's named page first then every page, for the model's claimed source text. Returns `exact` / `near` (≥90% via RapidFuzz) / `not_found` / `absent`, with the merged box and the page's own reading.
+  - `value_check.py`: does the model's `value` follow from its `source_text`, per field, using that field's normaliser (or a case/punctuation-insensitive text comparison).
+  - `confidence.py`: weakest-signal confidence — the lowest of self-rating, grounding score, and source confidence — capped at 0.3 on a failed value or format check. An absent field's self-rating is not fed in as a limiting signal (see deviations).
+- `backend/app/agents/`:
+  - `schema.py`: `FieldExtraction`, `ExtractionResult` (all 8 fields required), `RetryExtractionResult` (all optional, for the targeted retry).
+  - `extract.py`: `extract()` — one Gemini call, grounding/value/format checks and confidence per field, then one optional targeted retry (only for `not_found`/`near` fields, only if a `retry_pages_at_higher_dpi` callback is given and the budget has room), keeping whichever reading grounds better.
+  - `llm/prompts/extract_v1.txt` and `extract_v2.txt` (current): the retry prompt is `extract_retry_v1.txt`.
+- `backend/tests/test_trust_normalise.py` (23), `test_trust_grounding.py` (8), `test_trust_value_check.py` (10), `test_trust_confidence.py` (7), `test_trust_formats.py` (14), `test_extract.py` (7, `FakeTransport`), `test_extract_live.py` (3, `live`-marked, cached under `data/llm_cache/extract_smoke/`).
+
+### Commands
+
+```
+# From backend/, with the venv active
+.venv\Scripts\python -m pytest                 # 182 passed, 2 deselected (live), ~35 s
+.venv\Scripts\python -m pytest -m live          # 5 passed (2 LLM-client, 3 extract smoke), real Gemini calls
+.venv\Scripts\ruff check . ..\samples --config pyproject.toml     # All checks passed
+.venv\Scripts\ruff format --check . ..\samples --config pyproject.toml
+```
+
+### Verified
+
+- Full suite: 182 passed, 2 deselected, ~35 s. Ruff check and format: clean.
+- Phase 3: skew estimate on V1-C1 (true skew -2.77°) came out -2.75°, within the ±0.5° tolerance. OCR found the invoice number on every scan condition (C1, C2, C3) and on the JPG upload.
+- Phase 4: fake-transport tests cover every scenario in the plan's verify list (retry-then-success, primary-exhausted-then-fallback, daily-quota-skips-to-fallback, no-fallback-on-400, both-fail, fallback-disabled, bad-JSON-counts-as-attempt, 7th-call-refused including via fallback spend, every attempt recorded with its model). The `live` test made one real call to each model; both passed, both are now cached.
+- Phase 5: unit tests cover an invented value → `not_found`; "ACME" read from a page saying "ACEM" → `near` with both readings; "12,450.00 KGS" → `12450 KG`; the 0.3 cap on a failed check; the targeted retry keeping the better-grounding reading; the retry never firing when the budget has no room. The `live` smoke run against all three submission samples (see below) passed after one prompt fix.
+
+### Decisions and deviations (design doc updated to match)
+
+- **A `Transport` seam** between `LLMClient` and `google-genai` (not specified by §3.6): `GeminiTransport` for real calls, `FakeTransport` for tests, `CachingTransport` wrapping either for the dev cache.
+- **Daily-quota classification lives in `LLMClient`, not the transport**: a 429 always raises the same `RetryableTransportError`, carrying the API's suggested delay when given one; the client compares it against its own timeout, since only the client knows what timeout is in effect.
+- **Non-retryable failures short-circuit past the fallback**, via an internal `_NonRetryableFailure`, so a 4xx other than 429 can never accidentally trigger a fallback attempt.
+- **Grounding's fallback scorer is `fuzz.ratio`, not `fuzz.partial_ratio`** (failure log #6): the latter let an invented value score 100% against an unrelated short span.
+- **An absent field's `self_rating` (always 0, per the prompt) is not used as a confidence signal**: it's substituted with 1.0 before weakest-signal confidence runs, so an absent field's confidence is driven only by grounding (`absent`, never a limiting factor), leaving the mismatch-vs-uncertain call entirely to the Validator (Phase 6), as design section 3.4 intends.
+- **The 300 DPI retry is injected as a callback** (`retry_pages_at_higher_dpi`), since `extract()` only receives already-`PreparedPage`s and doesn't hold the original upload bytes needed to re-render. `graph.extract_node` (Phase 8) will supply it.
+- **Extractor prompt bumped to `extract_v2`** after the live smoke run (failure log #7): the model was reading the whole CONSIGNEE box (name plus every address line) as one `source_text`, which grounding's two-span limit could never match. `extract_v2` tells it explicitly to report only the company name line. `extract_v1.txt` is kept as the pre-fix record.
+- Design doc: items 2, 3, 4 and 8 ticked; §10.1 gained entries for the skew algorithm, the low-confidence threshold, the `Transport` seam, daily-quota classification, SDK retry/AFC disabling, the non-retryable short-circuit, the grounding scorer fix, the absent-field self-rating fix, and the retry-callback design.
+
+### Known issues
+
+- Failure log #6 (grounding's fuzzy-match bug, caught by a unit test) and #7 (the consignee multi-line read, caught only by the live smoke run) are both real failures from this session, now in `docs/failure-log.md`.
+- The live smoke run's per-sample comparison helper in `test_extract_live.py` is deliberately loose (it reports mismatches rather than asserting), since some conditions (the messy scan) are designed to test uncertainty handling, not perfect reads.
+
+### Open reminders
+
+- Everything from Phases 1 and 2 still stands (key rotation, free-tier limits, PRD numbers).
+- Free-tier limits: still open (Phase 1 gate item).
+
+### For Phase 6
+
+- The trust layer's public surface for the Validator: `app.trust.normalise` (per-field normalisers plus `text_comparison_key`), `app.trust.formats.format_ok`, and `FieldResult` (from `app.agents.extract`) carrying `value`, `confidence`, `grounding.status` per field.
+- `rules/acme.yaml` (Phase 2) is data only; Phase 6 writes the loader (`rules/loader.py`) and checkers (`rules/checkers.py`).
+- Design section 3.4's verdict order: confidence-below-threshold → `uncertain`, regardless of the rule; null value on a readable page → `mismatch`; null on an unreadable page → `uncertain`; otherwise the rule decides. "Readable page" isn't defined yet in code — Phase 3's `PageQuality.avg_confidence` (text layer is always 1.0) is the natural signal to use.
+- The entity-name rule (consignee) needs its own suffix normalisation ("Pte Ltd" = "Private Limited") ahead of the exact-match / 85–99-band-to-Gemini / below-85-mismatch logic in design section 3.4 — this is separate from `trust.normalise.text_comparison_key`, which only strips case and punctuation, not suffixes.
+- `CONFIDENCE_THRESHOLD` is already in `config.py` (0.85, starting value).
