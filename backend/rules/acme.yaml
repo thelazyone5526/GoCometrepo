@@ -12,6 +12,15 @@ document_types:
   commercial_invoice:
     expected_fields: [consignee, hs_code, port_of_loading, port_of_discharge,
                       incoterms, goods_description, gross_weight, invoice_number]
+  # Part 2, signed off under requirement 15.5 (D5 in docs/part2-decisions.md): before this,
+  # these two types expected no fields, so trust/guardrails.py::allowed_outcomes permitted
+  # only human_review for them, and the cross-document checker had no second carrier for any
+  # field. guardrails.py itself is unchanged; this only feeds it a fuller rule set, which is
+  # what requirement 2.5 asks for.
+  bill_of_lading:
+    expected_fields: [consignee, hs_code, port_of_loading, port_of_discharge, gross_weight]
+  packing_list:
+    expected_fields: [consignee, hs_code, gross_weight, invoice_number]
 
 rules:
   consignee:         {id: R-CON-1, type: entity_name, registered: "ACME Electronics Pte. Ltd.",

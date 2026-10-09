@@ -41,8 +41,10 @@ def test_expected_fields_for_commercial_invoice_matches_the_8_fields() -> None:
 
 
 def test_expected_fields_for_an_unlisted_document_type_is_empty() -> None:
+    # Part 2 (requirement 2.5, signed off under 15.5): bill_of_lading now has an entry, so
+    # certificate_of_origin -- still unlisted -- is the example here instead.
     rules = load_rules_for_customer("acme", rules_dir=RULES_DIR)
-    assert rules.expected_fields_for("bill_of_lading") == frozenset()
+    assert rules.expected_fields_for("certificate_of_origin") == frozenset()
 
 
 def test_hs_code_rule_parses_as_in_list_with_compare_digits() -> None:
