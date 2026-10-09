@@ -19,12 +19,19 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 
 from app.config import settings
 from app.graph.build import resume_document, resume_incomplete_runs, run_document
+from app.inbox.watcher import scan_inbox, watch_loop
 from app.ingest.files import check_upload
 from app.store import repository as repo
 from app.store.db import connect
 from app.store.repository import new_id
 
 CHECKPOINTS_FILENAME = "checkpoints.db"
+
+# design section 2's "cli watch" row: the documented runner for the inbox trigger when running
+# as a separate process. Resolved relative to the repo root so the default works the same way
+# whether `app.cli` is invoked from `backend/` or installed elsewhere, matching how
+# `app/rules/loader.py::DEFAULT_RULES_DIR` resolves itself.
+DEFAULT_INBOX_DIR = settings.data_dir.parent / "samples" / "inbox"
 
 
 def _checkpoint_connection(*, data_dir: Path | None = None) -> sqlite3.Connection:
@@ -167,6 +174,30 @@ def cmd_resume_one(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_scan_inbox(args: argparse.Namespace) -> int:
+    """One pass of the inbox trigger (design section 2's `scan_inbox`), for a test harness or
+    an operator who wants a single pass without leaving a process running."""
+    conn = connect()
+    checkpoint_conn = _checkpoint_connection()
+    checkpointer = SqliteSaver(checkpoint_conn)
+    shipment_ids = scan_inbox(conn, checkpointer, inbox_dir=Path(args.inbox))
+    print(f"Scanned {args.inbox}: touched {len(shipment_ids)} shipment(s)")
+    return 0
+
+
+def cmd_watch(args: argparse.Namespace) -> int:
+    """The documented long-running runner for the inbox trigger (design section 2): scans
+    `--inbox` every `--interval` seconds until the process is killed. This is the "separate
+    process" answer; the backend's own lifespan thread (`app/main.py`) covers the single-process
+    demo case."""
+    conn = connect()
+    checkpoint_conn = _checkpoint_connection()
+    checkpointer = SqliteSaver(checkpoint_conn)
+    print(f"Watching {args.inbox} every {args.interval}s (Ctrl+C to stop)")
+    watch_loop(conn, checkpointer, inbox_dir=Path(args.inbox), interval_seconds=args.interval)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -192,6 +223,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     dump_parser.add_argument("--limit", type=int, default=50, help="max runs to include")
     dump_parser.set_defaults(func=cmd_dump_llm_calls)
+
+    scan_inbox_parser = sub.add_parser(
+        "scan-inbox", help="Scan the inbox folder once and process any new emails"
+    )
+    scan_inbox_parser.add_argument("--inbox", default=str(DEFAULT_INBOX_DIR))
+    scan_inbox_parser.set_defaults(func=cmd_scan_inbox)
+
+    watch_parser = sub.add_parser(
+        "watch", help="Watch the inbox folder forever, scanning every --interval seconds"
+    )
+    watch_parser.add_argument("--inbox", default=str(DEFAULT_INBOX_DIR))
+    watch_parser.add_argument("--interval", type=float, default=2.0)
+    watch_parser.set_defaults(func=cmd_watch)
 
     return parser
 
