@@ -78,12 +78,22 @@ def _route_response(outcome: str = "auto_approve") -> RawResponse:
 
 
 @pytest.fixture
-def fake_transport(monkeypatch: pytest.MonkeyPatch) -> FakeTransport:
+def fake_transport(monkeypatch: pytest.MonkeyPatch):
     """Swap the graph's transport factory for a fresh `FakeTransport` per test, so no node
-    ever makes a real network call."""
+    ever makes a real network call. Also pins the model names these tests queue responses
+    for, so they pass whatever primary/fallback `backend/.env` is set to."""
+    from app.config import settings
+
+    originals = (settings.gemini_model, settings.gemini_fallback_model)
+    object.__setattr__(settings, "gemini_model", PRIMARY)
+    object.__setattr__(settings, "gemini_fallback_model", "gemini-3.5-flash-lite")
     transport = FakeTransport()
     monkeypatch.setattr(graph_nodes, "transport_factory", lambda: transport)
-    return transport
+    try:
+        yield transport
+    finally:
+        object.__setattr__(settings, "gemini_model", originals[0])
+        object.__setattr__(settings, "gemini_fallback_model", originals[1])
 
 
 @pytest.fixture
