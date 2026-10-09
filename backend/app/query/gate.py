@@ -36,7 +36,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-DEFAULT_ALLOWED_VIEWS: tuple[str, ...] = ("v_documents", "v_fields")
+DEFAULT_ALLOWED_VIEWS: tuple[str, ...] = ("v_documents", "v_fields", "v_pending_shipments")
 DEFAULT_ROW_LIMIT = 200
 DEFAULT_TIMEOUT_SECONDS = 5.0
 # How many virtual-machine instructions SQLite runs between progress-handler checks. Small
