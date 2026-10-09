@@ -39,6 +39,14 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+
+dist_dir = Path(__file__).parent.parent.parent / "frontend" / "dist"
+if dist_dir.exists():
+    app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="frontend")
+
+
 if __name__ == "__main__":
     import uvicorn
 
