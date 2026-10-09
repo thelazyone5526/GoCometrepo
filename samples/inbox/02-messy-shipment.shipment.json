@@ -1,0 +1,343 @@
+{
+  "schema_version": 1,
+  "shipment_id": "02-messy-shipment",
+  "file": "02-messy-shipment.eml",
+  "description": "Inbox sample 2: SHP-1043, three documents with two problems -- HS code 8504.40 is not on ACME's approved list (on every page), and the bill of lading consigns the goods to Zenith Trading Holdings instead of ACME. Should produce an amendment request",
+  "customer_id": "acme",
+  "reference": "SHP-1043",
+  "sender": "Brightpath Export Documentation <docs@brightpath-computing.example>",
+  "recipient": "ACME Shipment Desk <shipments@acme-logistics.example>",
+  "subject": "acme SHP-1043 shipment documents for checking",
+  "message_id": "<e28219a6f745175346b842cd@mail.example.com>",
+  "sent_at": "30 SEP 2026 11:48",
+  "attachment_filenames": [
+    "SHP-1043-commercial-invoice.pdf",
+    "SHP-1043-bill-of-lading.pdf",
+    "SHP-1043-packing-list.pdf"
+  ],
+  "documents": [
+    {
+      "filename": "SHP-1043-commercial-invoice.pdf",
+      "doc_type": "commercial_invoice",
+      "expected_fields": [
+        "consignee",
+        "hs_code",
+        "port_of_loading",
+        "port_of_discharge",
+        "incoterms",
+        "goods_description",
+        "gross_weight",
+        "invoice_number"
+      ],
+      "planted_errors": [
+        {
+          "code": "E1",
+          "field": "hs_code",
+          "description": "HS code 8504.40 (static converters) is not on ACME's approved list"
+        }
+      ],
+      "fields": {
+        "consignee": {
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd.",
+          "verdict": "match"
+        },
+        "hs_code": {
+          "printed": "8504.40",
+          "value": "850440",
+          "verdict": "mismatch"
+        },
+        "port_of_loading": {
+          "printed": "SHANGHAI, CHINA",
+          "value": "Shanghai",
+          "verdict": "match"
+        },
+        "port_of_discharge": {
+          "printed": "SINGAPORE",
+          "value": "Singapore",
+          "verdict": "match"
+        },
+        "incoterms": {
+          "printed": "CIF Singapore",
+          "value": "CIF",
+          "verdict": "match"
+        },
+        "goods_description": {
+          "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "verdict": "match"
+        },
+        "gross_weight": {
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          },
+          "verdict": "match"
+        },
+        "invoice_number": {
+          "printed": "INV-2026-00604",
+          "value": "INV-2026-00604",
+          "verdict": "match"
+        }
+      }
+    },
+    {
+      "filename": "SHP-1043-bill-of-lading.pdf",
+      "doc_type": "bill_of_lading",
+      "expected_fields": [
+        "consignee",
+        "hs_code",
+        "port_of_loading",
+        "port_of_discharge",
+        "gross_weight"
+      ],
+      "planted_errors": [
+        {
+          "code": "E1",
+          "field": "hs_code",
+          "description": "HS code 8504.40 (static converters) is not on ACME's approved list"
+        },
+        {
+          "code": "X1",
+          "field": "consignee",
+          "description": "Bill of lading consigns the goods to Zenith Trading Holdings Pte. Ltd. while the invoice and packing list name ACME Electronics Pte. Ltd.: the consignee differs between documents"
+        }
+      ],
+      "fields": {
+        "consignee": {
+          "printed": "Zenith Trading Holdings Pte. Ltd.",
+          "value": "Zenith Trading Holdings Pte. Ltd.",
+          "verdict": "mismatch"
+        },
+        "hs_code": {
+          "printed": "8504.40",
+          "value": "850440",
+          "verdict": "mismatch"
+        },
+        "port_of_loading": {
+          "printed": "SHANGHAI, CHINA",
+          "value": "Shanghai",
+          "verdict": "match"
+        },
+        "port_of_discharge": {
+          "printed": "SINGAPORE",
+          "value": "Singapore",
+          "verdict": "match"
+        },
+        "incoterms": {
+          "printed": null,
+          "value": null,
+          "verdict": "not_applicable"
+        },
+        "goods_description": {
+          "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "verdict": "not_applicable"
+        },
+        "gross_weight": {
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          },
+          "verdict": "match"
+        },
+        "invoice_number": {
+          "printed": null,
+          "value": null,
+          "verdict": "not_applicable"
+        }
+      }
+    },
+    {
+      "filename": "SHP-1043-packing-list.pdf",
+      "doc_type": "packing_list",
+      "expected_fields": [
+        "consignee",
+        "hs_code",
+        "gross_weight",
+        "invoice_number"
+      ],
+      "planted_errors": [
+        {
+          "code": "E1",
+          "field": "hs_code",
+          "description": "HS code 8504.40 (static converters) is not on ACME's approved list"
+        }
+      ],
+      "fields": {
+        "consignee": {
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd.",
+          "verdict": "match"
+        },
+        "hs_code": {
+          "printed": "8504.40",
+          "value": "850440",
+          "verdict": "mismatch"
+        },
+        "port_of_loading": {
+          "printed": "SHANGHAI, CHINA",
+          "value": "Shanghai",
+          "verdict": "not_applicable"
+        },
+        "port_of_discharge": {
+          "printed": "SINGAPORE",
+          "value": "Singapore",
+          "verdict": "not_applicable"
+        },
+        "incoterms": {
+          "printed": null,
+          "value": null,
+          "verdict": "not_applicable"
+        },
+        "goods_description": {
+          "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "verdict": "not_applicable"
+        },
+        "gross_weight": {
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          },
+          "verdict": "match"
+        },
+        "invoice_number": {
+          "printed": "INV-2026-00604",
+          "value": "INV-2026-00604",
+          "verdict": "match"
+        }
+      }
+    }
+  ],
+  "cross_checks": [
+    {
+      "field_name": "consignee",
+      "result": "inconsistent",
+      "reason": "consignee differs between documents: SHP-1043-commercial-invoice.pdf = 'ACME Electronics Pte. Ltd.', SHP-1043-bill-of-lading.pdf = 'Zenith Trading Holdings Pte. Ltd.', SHP-1043-packing-list.pdf = 'ACME Electronics Pte. Ltd.'",
+      "compared": [
+        {
+          "filename": "SHP-1043-commercial-invoice.pdf",
+          "doc_type": "commercial_invoice",
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd."
+        },
+        {
+          "filename": "SHP-1043-bill-of-lading.pdf",
+          "doc_type": "bill_of_lading",
+          "printed": "Zenith Trading Holdings Pte. Ltd.",
+          "value": "Zenith Trading Holdings Pte. Ltd."
+        },
+        {
+          "filename": "SHP-1043-packing-list.pdf",
+          "doc_type": "packing_list",
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd."
+        }
+      ]
+    },
+    {
+      "field_name": "hs_code",
+      "result": "consistent",
+      "reason": "All 3 documents carrying hs_code agree",
+      "compared": [
+        {
+          "filename": "SHP-1043-commercial-invoice.pdf",
+          "doc_type": "commercial_invoice",
+          "printed": "8504.40",
+          "value": "850440"
+        },
+        {
+          "filename": "SHP-1043-bill-of-lading.pdf",
+          "doc_type": "bill_of_lading",
+          "printed": "8504.40",
+          "value": "850440"
+        },
+        {
+          "filename": "SHP-1043-packing-list.pdf",
+          "doc_type": "packing_list",
+          "printed": "8504.40",
+          "value": "850440"
+        }
+      ]
+    },
+    {
+      "field_name": "gross_weight",
+      "result": "consistent",
+      "reason": "All 3 documents carrying gross_weight agree",
+      "compared": [
+        {
+          "filename": "SHP-1043-commercial-invoice.pdf",
+          "doc_type": "commercial_invoice",
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          }
+        },
+        {
+          "filename": "SHP-1043-bill-of-lading.pdf",
+          "doc_type": "bill_of_lading",
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          }
+        },
+        {
+          "filename": "SHP-1043-packing-list.pdf",
+          "doc_type": "packing_list",
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          }
+        }
+      ]
+    },
+    {
+      "field_name": "invoice_number",
+      "result": "consistent",
+      "reason": "All 2 documents carrying invoice_number agree",
+      "compared": [
+        {
+          "filename": "SHP-1043-commercial-invoice.pdf",
+          "doc_type": "commercial_invoice",
+          "printed": "INV-2026-00604",
+          "value": "INV-2026-00604"
+        },
+        {
+          "filename": "SHP-1043-packing-list.pdf",
+          "doc_type": "packing_list",
+          "printed": "INV-2026-00604",
+          "value": "INV-2026-00604"
+        }
+      ]
+    }
+  ],
+  "planted_errors": [
+    {
+      "code": "X1",
+      "field": "consignee",
+      "description": "Bill of lading consigns the goods to Zenith Trading Holdings Pte. Ltd. while the invoice and packing list name ACME Electronics Pte. Ltd.: the consignee differs between documents"
+    },
+    {
+      "code": "E1",
+      "field": "hs_code",
+      "description": "HS code 8504.40 (static converters) is not on ACME's approved list"
+    }
+  ],
+  "discrepancy_fields": [
+    "consignee",
+    "hs_code"
+  ],
+  "discrepancy_count": 2,
+  "expected_outcome": "amendment_request",
+  "acceptable_outcomes": [
+    "amendment_request",
+    "human_review"
+  ]
+}

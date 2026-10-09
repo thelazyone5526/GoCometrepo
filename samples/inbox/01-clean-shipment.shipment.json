@@ -1,0 +1,305 @@
+{
+  "schema_version": 1,
+  "shipment_id": "01-clean-shipment",
+  "file": "01-clean-shipment.eml",
+  "description": "Inbox sample 1: SHP-1042, three documents about one consignment -- commercial invoice, bill of lading, packing list. All three agree and every value is inside ACME's rules, so the shipment should be recommended for approval",
+  "customer_id": "acme",
+  "reference": "SHP-1042",
+  "sender": "Brightpath Export Documentation <docs@brightpath-computing.example>",
+  "recipient": "ACME Shipment Desk <shipments@acme-logistics.example>",
+  "subject": "SHP-1042 acme - documents for approval",
+  "message_id": "<7022d4ab0f3bde5ba4ba1f42@mail.example.com>",
+  "sent_at": "19 SEP 2026 09:12",
+  "attachment_filenames": [
+    "SHP-1042-commercial-invoice.pdf",
+    "SHP-1042-bill-of-lading.pdf",
+    "SHP-1042-packing-list.pdf"
+  ],
+  "documents": [
+    {
+      "filename": "SHP-1042-commercial-invoice.pdf",
+      "doc_type": "commercial_invoice",
+      "expected_fields": [
+        "consignee",
+        "hs_code",
+        "port_of_loading",
+        "port_of_discharge",
+        "incoterms",
+        "goods_description",
+        "gross_weight",
+        "invoice_number"
+      ],
+      "planted_errors": [],
+      "fields": {
+        "consignee": {
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd.",
+          "verdict": "match"
+        },
+        "hs_code": {
+          "printed": "8471.30",
+          "value": "847130",
+          "verdict": "match"
+        },
+        "port_of_loading": {
+          "printed": "SHANGHAI, CHINA",
+          "value": "Shanghai",
+          "verdict": "match"
+        },
+        "port_of_discharge": {
+          "printed": "SINGAPORE",
+          "value": "Singapore",
+          "verdict": "match"
+        },
+        "incoterms": {
+          "printed": "CIF Singapore",
+          "value": "CIF",
+          "verdict": "match"
+        },
+        "goods_description": {
+          "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "verdict": "match"
+        },
+        "gross_weight": {
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          },
+          "verdict": "match"
+        },
+        "invoice_number": {
+          "printed": "INV-2026-00417",
+          "value": "INV-2026-00417",
+          "verdict": "match"
+        }
+      }
+    },
+    {
+      "filename": "SHP-1042-bill-of-lading.pdf",
+      "doc_type": "bill_of_lading",
+      "expected_fields": [
+        "consignee",
+        "hs_code",
+        "port_of_loading",
+        "port_of_discharge",
+        "gross_weight"
+      ],
+      "planted_errors": [],
+      "fields": {
+        "consignee": {
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd.",
+          "verdict": "match"
+        },
+        "hs_code": {
+          "printed": "8471.30",
+          "value": "847130",
+          "verdict": "match"
+        },
+        "port_of_loading": {
+          "printed": "SHANGHAI, CHINA",
+          "value": "Shanghai",
+          "verdict": "match"
+        },
+        "port_of_discharge": {
+          "printed": "SINGAPORE",
+          "value": "Singapore",
+          "verdict": "match"
+        },
+        "incoterms": {
+          "printed": null,
+          "value": null,
+          "verdict": "not_applicable"
+        },
+        "goods_description": {
+          "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "verdict": "not_applicable"
+        },
+        "gross_weight": {
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          },
+          "verdict": "match"
+        },
+        "invoice_number": {
+          "printed": null,
+          "value": null,
+          "verdict": "not_applicable"
+        }
+      }
+    },
+    {
+      "filename": "SHP-1042-packing-list.pdf",
+      "doc_type": "packing_list",
+      "expected_fields": [
+        "consignee",
+        "hs_code",
+        "gross_weight",
+        "invoice_number"
+      ],
+      "planted_errors": [],
+      "fields": {
+        "consignee": {
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd.",
+          "verdict": "match"
+        },
+        "hs_code": {
+          "printed": "8471.30",
+          "value": "847130",
+          "verdict": "match"
+        },
+        "port_of_loading": {
+          "printed": "SHANGHAI, CHINA",
+          "value": "Shanghai",
+          "verdict": "not_applicable"
+        },
+        "port_of_discharge": {
+          "printed": "SINGAPORE",
+          "value": "Singapore",
+          "verdict": "not_applicable"
+        },
+        "incoterms": {
+          "printed": null,
+          "value": null,
+          "verdict": "not_applicable"
+        },
+        "goods_description": {
+          "printed": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "value": "Portable laptop computers, 14-inch, 16 GB RAM",
+          "verdict": "not_applicable"
+        },
+        "gross_weight": {
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          },
+          "verdict": "match"
+        },
+        "invoice_number": {
+          "printed": "INV-2026-00417",
+          "value": "INV-2026-00417",
+          "verdict": "match"
+        }
+      }
+    }
+  ],
+  "cross_checks": [
+    {
+      "field_name": "consignee",
+      "result": "consistent",
+      "reason": "All 3 documents carrying consignee agree",
+      "compared": [
+        {
+          "filename": "SHP-1042-commercial-invoice.pdf",
+          "doc_type": "commercial_invoice",
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd."
+        },
+        {
+          "filename": "SHP-1042-bill-of-lading.pdf",
+          "doc_type": "bill_of_lading",
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd."
+        },
+        {
+          "filename": "SHP-1042-packing-list.pdf",
+          "doc_type": "packing_list",
+          "printed": "ACME Electronics Pte. Ltd.",
+          "value": "ACME Electronics Pte. Ltd."
+        }
+      ]
+    },
+    {
+      "field_name": "hs_code",
+      "result": "consistent",
+      "reason": "All 3 documents carrying hs_code agree",
+      "compared": [
+        {
+          "filename": "SHP-1042-commercial-invoice.pdf",
+          "doc_type": "commercial_invoice",
+          "printed": "8471.30",
+          "value": "847130"
+        },
+        {
+          "filename": "SHP-1042-bill-of-lading.pdf",
+          "doc_type": "bill_of_lading",
+          "printed": "8471.30",
+          "value": "847130"
+        },
+        {
+          "filename": "SHP-1042-packing-list.pdf",
+          "doc_type": "packing_list",
+          "printed": "8471.30",
+          "value": "847130"
+        }
+      ]
+    },
+    {
+      "field_name": "gross_weight",
+      "result": "consistent",
+      "reason": "All 3 documents carrying gross_weight agree",
+      "compared": [
+        {
+          "filename": "SHP-1042-commercial-invoice.pdf",
+          "doc_type": "commercial_invoice",
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          }
+        },
+        {
+          "filename": "SHP-1042-bill-of-lading.pdf",
+          "doc_type": "bill_of_lading",
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          }
+        },
+        {
+          "filename": "SHP-1042-packing-list.pdf",
+          "doc_type": "packing_list",
+          "printed": "862.40 KGS",
+          "value": {
+            "amount": 862.4,
+            "unit": "KG"
+          }
+        }
+      ]
+    },
+    {
+      "field_name": "invoice_number",
+      "result": "consistent",
+      "reason": "All 2 documents carrying invoice_number agree",
+      "compared": [
+        {
+          "filename": "SHP-1042-commercial-invoice.pdf",
+          "doc_type": "commercial_invoice",
+          "printed": "INV-2026-00417",
+          "value": "INV-2026-00417"
+        },
+        {
+          "filename": "SHP-1042-packing-list.pdf",
+          "doc_type": "packing_list",
+          "printed": "INV-2026-00417",
+          "value": "INV-2026-00417"
+        }
+      ]
+    }
+  ],
+  "planted_errors": [],
+  "discrepancy_fields": [],
+  "discrepancy_count": 0,
+  "expected_outcome": "auto_approve",
+  "acceptable_outcomes": [
+    "auto_approve"
+  ]
+}
