@@ -657,3 +657,194 @@ button:disabled {
 .ask-result-table thead th {
   background: #f5f6f8;
 }
+
+/* ------------------------------------------------------------------ */
+/* Part 2 shipment screen: operator-friendly verification result       */
+/* ------------------------------------------------------------------ */
+
+/* The status banner: the one thing an operator reads first — outcome, what it means, and a
+   row of count chips. Left border carries the colour so it's not colour-alone (the heading
+   text and chips carry the meaning too). */
+.status-banner {
+  border: 1px solid #d7dbe0;
+  border-left: 8px solid #6b7280;
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  background: #f8f9fb;
+}
+
+.status-banner__eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+  color: #4a5261;
+}
+
+.status-banner__outcome {
+  margin: 0.1rem 0 0.4rem;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.status-banner__guidance {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  color: #2a2f3a;
+}
+
+.status-banner__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.status-banner--auto_approve {
+  border-left-color: #1c6b32;
+  background: #f1faf3;
+}
+.status-banner--auto_approve .status-banner__outcome {
+  color: #1c6b32;
+}
+
+.status-banner--amendment_request {
+  border-left-color: #a4160a;
+  background: #fdf4f3;
+}
+.status-banner--amendment_request .status-banner__outcome {
+  color: #a4160a;
+}
+
+.status-banner--human_review {
+  border-left-color: #8a5300;
+  background: #fdf8f0;
+}
+.status-banner--human_review .status-banner__outcome {
+  color: #8a5300;
+}
+
+.status-banner--processing {
+  border-left-color: #1a56c4;
+  background: #f2f6fe;
+}
+.status-banner--processing .status-banner__outcome {
+  color: #1a56c4;
+}
+
+.status-banner--failed {
+  border-left-color: #4a5261;
+}
+.status-banner--failed .status-banner__outcome {
+  color: #4a5261;
+}
+
+.count-chip {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #eceff2;
+  color: #2a2f3a;
+  border: 1px solid #d7dbe0;
+}
+
+.count-chip--problem {
+  background: #fdeaea;
+  color: #a4160a;
+  border-color: #e4a9a3;
+}
+
+.count-chip--uncertain {
+  background: #fff2e0;
+  color: #8a5300;
+  border-color: #e4c58a;
+}
+
+.count-chip--ok {
+  background: #e3f6e8;
+  color: #1c6b32;
+  border-color: #a3d4b2;
+}
+
+/* Problems-to-fix card: the actionable list, each row a button that opens the detail. */
+.problems-card {
+  border-color: #e4a9a3;
+}
+
+.problems-card__heading {
+  color: #a4160a;
+  margin-top: 0;
+}
+
+.problems-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.problem-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  text-align: left;
+  background: #fdf4f3;
+  color: #1a1a1a;
+  border: 1px solid #e4a9a3;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+}
+
+.problem-item:hover {
+  background: #fbe9e7;
+}
+
+.problem-item__title {
+  font-weight: 600;
+  color: #a4160a;
+  text-transform: capitalize;
+}
+
+.problem-item__detail {
+  font-size: 0.9rem;
+  color: #2a2f3a;
+}
+
+.problem-item__cue {
+  font-size: 0.8rem;
+  color: #1a56c4;
+  font-weight: 600;
+}
+
+.needs-check-card {
+  border-color: #e4c58a;
+}
+
+.needs-check-card h2 {
+  color: #8a5300;
+  margin-top: 0;
+}
+
+.needs-check-card__note {
+  font-size: 0.9rem;
+  color: #4a5261;
+  margin-top: 0;
+}
+
+/* Collapsible full breakdown: present for completeness (every field, every check) but out of
+   the way by default, so the operator isn't landing on a wall of tables. */
+.details-card__summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.details-card__hint {
+  font-size: 0.85rem;
+  color: #4a5261;
+}

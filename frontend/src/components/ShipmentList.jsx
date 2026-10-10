@@ -1,13 +1,12 @@
 import { reviewStateLabel, shipmentOutcomeLabel } from '../outcomes.js'
 
-// Part 2 screen state 1 (requirements 8.1-8.4): incoming and processing. Each row is one
-// email/shipment: sender, subject, received time, attachment count, a "N of M documents
-// done" progress count while anything is still processing, replaced by the outcome once
-// decided. A failed shipment (unknown customer, no attachments, or a processing error)
-// still shows up, with its reason, rather than disappearing (requirement 13.1).
+// Part 2 screen state 1 (requirements 8.1-8.4): incoming and processing. One row per email:
+// subject, who sent it, a status badge (progress while running, outcome once decided), and a
+// small "N to fix" chip only when there's actually something to fix. A failed shipment still
+// shows, with its reason (requirement 13.1). Kept deliberately spare so the list scans fast.
 function ShipmentList({ shipments, selectedShipmentId, onSelectShipment }) {
   if (shipments.length === 0) {
-    return <p>No shipments yet. Drop a sample email into the inbox folder to see one appear.</p>
+    return <p>No shipments yet. Drop an email into the inbox folder to see one appear.</p>
   }
 
   return (
@@ -24,7 +23,7 @@ function ShipmentList({ shipments, selectedShipmentId, onSelectShipment }) {
           statusText = reviewStateLabel('failed')
           badgeClass = 'failed'
         } else if (isProcessing) {
-          statusText = `${shipment.documents_done} of ${shipment.documents_total} documents done`
+          statusText = `${shipment.documents_done} of ${shipment.documents_total} done`
           badgeClass = 'processing'
         } else {
           statusText = shipmentOutcomeLabel(shipment.outcome)
@@ -43,16 +42,16 @@ function ShipmentList({ shipments, selectedShipmentId, onSelectShipment }) {
                 {shipment.subject || '(no subject)'}
               </span>
               <span className="run-list-item__customer">
-                {shipment.sender || 'unknown sender'} · {shipment.customer_name}
-                {shipment.reference && ` · ${shipment.reference} (cycle ${shipment.cycle_number})`}
+                {shipment.customer_name}
+                {shipment.reference && ` · ${shipment.reference}`}
               </span>
               <span className={`outcome-badge outcome-badge--${badgeClass}`}>{statusText}</span>
               {isFailed && shipment.failure_reason && (
                 <span className="run-list-item__reason">{shipment.failure_reason}</span>
               )}
-              {!isFailed && !isProcessing && (
-                <span className="run-list-item__counts">
-                  {shipment.discrepancy_count} discrepancies · {shipment.uncertain_count} uncertain
+              {!isFailed && !isProcessing && shipment.discrepancy_count > 0 && (
+                <span className="run-list-item__reason">
+                  {shipment.discrepancy_count} to fix
                 </span>
               )}
             </button>
