@@ -152,3 +152,12 @@ export async function rerunDocument(shipmentId, documentId) {
     ),
   )
 }
+
+/**
+ * The URL for a page image (requirement 10.2): `GET /api/runs/{run_id}/pages/{n}`, `n`
+ * 0-based. Reused as-is from Part 1 (design §2: "no new image route"); a `page` field on a
+ * field result is 1-based, so the caller passes `page - 1`.
+ */
+export function pageImageUrl(runId, pageIndex) {
+  return `/api/runs/${encodeURIComponent(runId)}/pages/${pageIndex}`
+}

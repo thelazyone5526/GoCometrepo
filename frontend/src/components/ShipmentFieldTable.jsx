@@ -11,12 +11,13 @@ function sortByProblemsFirst(fields) {
 // then uncertain, then matches. Confidence as a percentage (not the raw 0-1 Part 1 shows,
 // design §4 state 2's own wording) and verdict always shown with text plus an icon, never
 // colour alone (requirement 8.4, 13.5).
-function ShipmentFieldTable({ fieldResults }) {
+function ShipmentFieldTable({ fieldResults, onOpenField }) {
   if (fieldResults.length === 0) {
     return <p>No field results yet.</p>
   }
 
   const sorted = sortByProblemsFirst(fieldResults)
+  const clickable = typeof onOpenField === 'function'
 
   return (
     <table className="field-table">
@@ -32,6 +33,7 @@ function ShipmentFieldTable({ fieldResults }) {
           <th scope="col">Verdict</th>
           <th scope="col">Found</th>
           <th scope="col">Expected</th>
+          {clickable && <th scope="col">Detail</th>}
         </tr>
       </thead>
       <tbody>
@@ -50,6 +52,13 @@ function ShipmentFieldTable({ fieldResults }) {
               </td>
               <td>{field.found ?? '—'}</td>
               <td>{field.expected ?? '—'}</td>
+              {clickable && (
+                <td>
+                  <button type="button" onClick={() => onOpenField(field)}>
+                    View
+                  </button>
+                </td>
+              )}
             </tr>
           )
         })}

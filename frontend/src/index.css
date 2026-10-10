@@ -237,6 +237,135 @@ button:disabled {
   padding-left: 1rem;
 }
 
+/* state 3: discrepancy detail */
+
+.discrepancy-detail__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.discrepancy-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.discrepancy-fields dt {
+  font-weight: 600;
+}
+
+.discrepancy-fields dd {
+  margin: 0;
+}
+
+.source-snippet {
+  font-style: italic;
+  background: #f5f6f8;
+  border: 1px solid #d7dbe0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.page-image-wrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.page-image {
+  max-width: 100%;
+  display: block;
+  border: 1px solid #d7dbe0;
+}
+
+.page-image-box {
+  position: absolute;
+  border: 3px solid #a4160a;
+  background: rgba(164, 22, 10, 0.12);
+  pointer-events: none;
+}
+
+/* state 4: editable draft */
+
+.draft-panel .field-row input,
+.draft-panel .field-row textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d7dbe0;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.edited-marker {
+  font-weight: 400;
+  font-style: italic;
+  color: #8a5300;
+}
+
+.draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.draft-actions button[type='button'] {
+  background: #f5f6f8;
+  color: #1a1a1a;
+  border: 1px solid #d7dbe0;
+}
+
+.draft-not-sent-label {
+  display: inline-block;
+  font-weight: 700;
+  color: #8a5300;
+  background: #fff2e0;
+  border: 1px solid #8a5300;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+
+.draft-sent-label {
+  display: inline-block;
+  font-weight: 700;
+  color: #1c6b32;
+  background: #e3f6e8;
+  border: 1px solid #1c6b32;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+
+.draft-readonly {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.draft-readonly dt {
+  font-weight: 600;
+}
+
+.draft-readonly dd {
+  margin: 0;
+}
+
+.draft-hint {
+  color: #1c6b32;
+}
+
+.confirm-dialog {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 2px solid #8a5300;
+  border-radius: 8px;
+  background: #fff2e0;
+}
+
 .progress-steps {
   list-style: none;
   display: flex;

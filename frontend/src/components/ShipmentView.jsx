@@ -6,6 +6,8 @@ import {
   shipmentOutcomeLabel,
 } from '../outcomes.js'
 import CrossCheckTable from './CrossCheckTable.jsx'
+import DiscrepancyDetail from './DiscrepancyDetail.jsx'
+import DraftPanel from './DraftPanel.jsx'
 import ShipmentFieldTable from './ShipmentFieldTable.jsx'
 
 const POLL_INTERVAL_MS = 2000
@@ -21,6 +23,11 @@ function isStillProcessing(shipment) {
 function ShipmentView({ shipmentId }) {
   const [shipment, setShipment] = useState(null)
   const [error, setError] = useState(null)
+  // state 3 (requirement 10): which detail, if any, is open on top of state 2. `null` means
+  // state 2 is showing. Reset whenever the shipment changes (a fresh poll result still has
+  // the same field shape, so this is only reset on shipmentId change via the key prop in
+  // App.jsx, not on every poll).
+  const [openDetail, setOpenDetail] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -111,6 +118,13 @@ function ShipmentView({ shipmentId }) {
     ),
   ]
   const carriedOver = shipment.documents.filter((doc) => doc.origin === 'carried_over')
+  const runIdByDocument = new Map(shipment.documents.map((doc) => [doc.document_id, doc.run_id]))
+
+  if (openDetail) {
+    return (
+      <DiscrepancyDetail item={openDetail} onClose={() => setOpenDetail(null)} />
+    )
+  }
 
   return (
     <div className="run-view">
@@ -161,7 +175,15 @@ function ShipmentView({ shipmentId }) {
           <h2 id="uncertain-heading">Needs your check</h2>
           <ul>
             {shipment.uncertain_items.map((item, index) => (
-              <li key={index}>{item}</li>
+              <li key={index}>
+                {item}{' '}
+                <button
+                  type="button"
+                  onClick={() => setOpenDetail({ type: 'uncertain', text: item })}
+                >
+                  Why?
+                </button>
+              </li>
             ))}
           </ul>
         </section>
@@ -169,12 +191,24 @@ function ShipmentView({ shipmentId }) {
 
       <section className="card" aria-labelledby="shipment-fields-heading">
         <h2 id="shipment-fields-heading">Fields</h2>
-        <ShipmentFieldTable fieldResults={shipment.field_results} />
+        <ShipmentFieldTable
+          fieldResults={shipment.field_results}
+          onOpenField={(field) =>
+            setOpenDetail({
+              type: 'field',
+              field,
+              runId: runIdByDocument.get(field.document_id) ?? null,
+            })
+          }
+        />
       </section>
 
       <section className="card" aria-labelledby="cross-checks-heading">
         <h2 id="cross-checks-heading">Cross-document checks</h2>
-        <CrossCheckTable crossChecks={shipment.cross_checks} />
+        <CrossCheckTable
+          crossChecks={shipment.cross_checks}
+          onOpenCheck={(check) => setOpenDetail({ type: 'cross_check', check })}
+        />
       </section>
 
       {shipment.attachments.some((a) => a.status !== 'accepted') && (
@@ -190,6 +224,8 @@ function ShipmentView({ shipmentId }) {
           </ul>
         </section>
       )}
+
+      <DraftPanel shipment={shipment} />
     </div>
   )
 }

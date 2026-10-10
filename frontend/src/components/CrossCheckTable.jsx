@@ -14,10 +14,12 @@ const RESULT_TO_VERDICT_CLASS = {
 // separate from the per-document fields. For an `inconsistent` result, the value found in
 // each document involved is shown inline (requirement 3.6, 10.3) rather than requiring a
 // click into state 3 just to see what disagreed.
-function CrossCheckTable({ crossChecks }) {
+function CrossCheckTable({ crossChecks, onOpenCheck }) {
   if (crossChecks.length === 0) {
     return <p>No cross-document checks for this shipment.</p>
   }
+
+  const clickable = typeof onOpenCheck === 'function'
 
   return (
     <table className="field-table">
@@ -27,6 +29,7 @@ function CrossCheckTable({ crossChecks }) {
           <th scope="col">Field</th>
           <th scope="col">Result</th>
           <th scope="col">Values found</th>
+          {clickable && <th scope="col">Detail</th>}
         </tr>
       </thead>
       <tbody>
@@ -53,6 +56,15 @@ function CrossCheckTable({ crossChecks }) {
                   </ul>
                 )}
               </td>
+              {clickable && (
+                <td>
+                  {check.result === 'inconsistent' && (
+                    <button type="button" onClick={() => onOpenCheck(check)}>
+                      View
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
           )
         })}
