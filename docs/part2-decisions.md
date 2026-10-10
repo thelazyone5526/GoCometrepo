@@ -159,3 +159,46 @@ that is said rather than invented.
 | `auto_approve` meaning | "Recommended for approval" only; nothing is sent without the operator clicking Send | - | The label needs explaining on screen, since the word suggests more than it means |
 | Customer and reference source | Both read from the email subject, in any order | Map the sender domain to the customer -- named as the production alternative | Subjects are inconsistent and forgeable; a typo loses the link |
 | Uncertain items | No operator action in Part 2; they stay uncertain and show under "needs your check", and are excluded from the generated text for SU | Let the operator confirm or override an uncertain value, explicitly out of scope | An operator who can see the value is right still cannot clear it |
+
+
+### D7. When the shipment decision (cross-check, decision, draft) is triggered
+
+- **Options considered**
+  - A: Lazy, on read. `GET /api/shipments` and `GET /api/shipments/{id}` check whether every
+    one of a shipment's own-email documents has a final result and no outcome is stored yet,
+    and if so run cross-check, the decision and the draft right there before responding.
+    `inbox/watcher.py` (task 5, already committed) is not touched.
+  - B: Eager, inside `inbox/watcher.py::_process_email`, right after `build_effective_set`, so
+    a shipment is fully decided the moment ingestion finishes, independent of the screen.
+- **Chosen**: A.
+- **Why**: `tasks.md` scopes this orchestration to task 11 (`api/shipment_routes.py`) and lists
+  `inbox/watcher.py` only under task 5, already finished and committed; B would mean editing a
+  previously verified task's file for a wiring decision tasks.md places elsewhere. A also fits
+  D1's polling model (design section 4) with no extra cost: the first poll after the last
+  document finishes does slightly more work, nothing more.
+- **Trade-off accepted**: a shipment nobody ever opens on the screen is never decided or
+  drafted (no cron equivalent of "decide everything that's ready"). Acceptable for a
+  single-operator demo; a production version would decide shipments as part of ingestion or a
+  worker tick, not on request.
+
+### D8. How a rerun updates `shipment_documents.run_id`
+
+- **Options considered**
+  - A: A new repository function, `update_shipment_document_run` (plus a sibling
+    `update_document_doc_type`, promoted from `inbox/watcher.py`'s private
+    `_set_document_doc_type` once a second caller needed the same statement), added to
+    `store/repository.py` beside the other `shipment_documents` writers.
+  - B: A local `UPDATE` statement inside `shipment_routes.py`, following the precedent
+    `inbox/watcher.py::_set_document_doc_type` set for a single-use statement.
+- **Chosen**: A.
+- **Why**: `add_shipment_document` is `INSERT OR IGNORE` against `ix_shipment_documents_once`,
+  a load-bearing unique index (design section 3); a second write path that updates the same
+  row needs to be visible next to that index's other callers in `repository.py`, not duplicated
+  ad hoc in the API layer the way `_set_document_doc_type` was for a single, document-creation-
+  time write. Once a second caller (the rerun route) needs the doc_type update too, the
+  single-use justification for keeping it private in `watcher.py` no longer holds, so it is
+  promoted at the same time.
+- **Trade-off accepted**: `inbox/watcher.py` (task 5) is edited again, for a pure refactor
+  (replacing its private statement with the promoted repository call, no behaviour change) --
+  flagged to the owner before doing it, per the "don't touch another task's file without
+  flagging it first" rule.

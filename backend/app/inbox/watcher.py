@@ -63,33 +63,23 @@ def _shipment_chain_ids(conn, shipment_id: str) -> list[str]:
     return ids
 
 
-def _document_type_from_state(final_state: dict[str, Any]) -> str:
+def document_type_from_state(final_state: dict[str, Any]) -> str:
     """What `doc_type` to write back for a document the Part 1 pipeline just ran on
     (requirement 2.3). The Extractor's own result lives at `state["extraction"]["document_type"]`
     (see `app/graph/state.py::extraction_to_dict`); a run that errored before extraction wrote
     anything, or that reported a type this install doesn't know about, is recorded as
-    "uncertain" rather than guessed at."""
+    "uncertain" rather than guessed at.
+
+    Public (promoted from `_document_type_from_state`) because the rerun route
+    (`api/shipment_routes.py`, task 11) needs the exact same mapping after re-running a single
+    failed document -- same reasoning as D8 in `docs/part2-decisions.md`: once a second caller
+    needs it, the single-use justification for keeping it private no longer holds.
+    """
     extraction = final_state.get("extraction") or {}
     document_type = extraction.get("document_type")
     if document_type in _SUPPORTED_DOC_TYPES:
         return document_type
     return "uncertain"
-
-
-def _set_document_doc_type(conn, *, document_id: str, doc_type: str) -> None:
-    """The one direct SQL statement in this module.
-
-    `app/store/repository.py` has no "update a document's doc_type" function yet --
-    `create_document_for_shipment` only ever sets it once, at creation, and that is correct for
-    every other caller. Here the type genuinely is not known until *after* the Part 1 pipeline
-    has run (the whole reason intake passes `doc_type=None` into `accept_attachment`), so this
-    writes the one UPDATE repository.py doesn't provide rather than adding a new, single-use
-    function to a module this task does not own. `repository.py` already does exactly this
-    pattern -- a single `UPDATE ... WHERE id = ?` -- for `set_review_state` and `update_run_step`;
-    this statement reads the same way.
-    """
-    conn.execute("UPDATE documents SET doc_type = ? WHERE id = ?", (doc_type, document_id))
-    conn.commit()
 
 
 def _record_failed_email(
@@ -245,8 +235,8 @@ def _process_email(
             document_id=document_id,
             run_id=run_id,
         )
-        doc_type = _document_type_from_state(final_state)
-        _set_document_doc_type(conn, document_id=document_id, doc_type=doc_type)
+        doc_type = document_type_from_state(final_state)
+        repo.update_document_doc_type(conn, document_id=document_id, doc_type=doc_type)
         repo.add_shipment_document(
             conn,
             shipment_id=shipment_id,
@@ -367,4 +357,4 @@ def watch_loop(
             stop_event.wait(interval_seconds)
 
 
-__all__ = ["scan_inbox", "watch_loop"]
+__all__ = ["document_type_from_state", "scan_inbox", "watch_loop"]

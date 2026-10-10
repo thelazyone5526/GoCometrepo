@@ -458,6 +458,9 @@ def test_openapi_schema_lists_every_endpoint(client) -> None:
     assert response.status_code == 200
     schema = response.json()
     paths = set(schema["paths"].keys())
+    # Part 1 routes (api/routes.py): unchanged by Part 2's new router (api/shipment_routes.py,
+    # design section 2 -- "a new file; api/routes.py is not edited"), plus the Part 2
+    # shipment routes (task 11) added alongside them.
     assert paths == {
         "/api/health",
         "/api/customers",
@@ -466,4 +469,10 @@ def test_openapi_schema_lists_every_endpoint(client) -> None:
         "/api/runs/{run_id}/llm-calls",
         "/api/runs/{run_id}/pages/{page_number}",
         "/api/query",
+        "/api/shipments",
+        "/api/shipments/{shipment_id}",
+        "/api/shipments/{shipment_id}/draft",
+        "/api/shipments/{shipment_id}/send",
+        "/api/shipments/{shipment_id}/reviewed",
+        "/api/shipments/{shipment_id}/documents/{document_id}/rerun",
     }

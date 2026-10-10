@@ -632,6 +632,42 @@ def add_shipment_document(
     conn.commit()
 
 
+def update_shipment_document_run(
+    conn: sqlite3.Connection,
+    *,
+    shipment_id: str,
+    document_id: str,
+    run_id: str,
+    doc_type: str | None,
+) -> None:
+    """Point an existing effective-set entry at a new run (requirement 13.3: a rerun of one
+    failed document). `add_shipment_document`'s `INSERT OR IGNORE` deliberately keeps the
+    first-recorded row on a conflict (design section 2), so it cannot be reused here -- a
+    rerun needs the *same* `(shipment_id, document_id)` row to end up pointing at the new
+    `run_id` and `doc_type`, not a second row next to the old one. This is the one other write
+    against `ix_shipment_documents_once`'s row shape, kept beside `add_shipment_document` so
+    both callers of that index are visible together."""
+    conn.execute(
+        """
+        UPDATE shipment_documents SET run_id = ?, doc_type = ?
+        WHERE shipment_id = ? AND document_id = ?
+        """,
+        (run_id, doc_type, shipment_id, document_id),
+    )
+    conn.commit()
+
+
+def update_document_doc_type(conn: sqlite3.Connection, *, document_id: str, doc_type: str) -> None:
+    """Write back the Doc_Type the Extractor reported, once the Part 1 pipeline has actually
+    run (requirement 2.3). `create_document_for_shipment` only sets `doc_type` once, at
+    creation, when it is usually still unknown -- this is the one other place it changes.
+    Promoted from `inbox/watcher.py`'s private `_set_document_doc_type` once the rerun route
+    needed the same statement (D8 in `docs/part2-decisions.md`); no behaviour change from the
+    original."""
+    conn.execute("UPDATE documents SET doc_type = ? WHERE id = ?", (doc_type, document_id))
+    conn.commit()
+
+
 def list_shipment_documents(conn: sqlite3.Connection, shipment_id: str) -> list[sqlite3.Row]:
     """The effective set, with each document's filename and its run's status, in the stable
     order the cross-checker sorts by (R3.1: input order cannot change the answer)."""

@@ -24,7 +24,7 @@ value present but flagged) with `uncertain=True` makes the field `uncertain` ins
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, is_dataclass
 from typing import Literal
 
 from app.rules.checkers import entity_name_key
@@ -94,13 +94,23 @@ def _sort_key(entry: DocumentFieldValue) -> tuple[str, str, str]:
     return (entry.doc_type or "", entry.filename, entry.document_id)
 
 
+def _json_safe(normalised: object | None) -> object | None:
+    """`compared` is stored as JSON (`store/repository.py::upsert_cross_check_result`), but
+    `normalise_weight` returns a `Weight` dataclass, not a JSON-native type -- this is the one
+    place that difference has to be papered over, so every other normaliser (which already
+    returns a plain `str`) is untouched."""
+    if is_dataclass(normalised) and not isinstance(normalised, type):
+        return {f.name: getattr(normalised, f.name) for f in fields(normalised)}
+    return normalised
+
+
 def _compared_row(entry: DocumentFieldValue, normalised: object | None) -> dict:
     return {
         "document_id": entry.document_id,
         "filename": entry.filename,
         "doc_type": entry.doc_type,
         "value": entry.value,
-        "normalised": normalised,
+        "normalised": _json_safe(normalised),
         "source_text": entry.source_text,
         "page": entry.page,
         "field_result_id": entry.field_result_id,

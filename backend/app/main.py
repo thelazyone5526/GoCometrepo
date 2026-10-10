@@ -21,6 +21,7 @@ from fastapi import FastAPI
 
 from app.api.routes import router as api_router
 from app.api.routes import startup_resume_incomplete_runs
+from app.api.shipment_routes import router as shipment_router
 
 # Part 2's inbox trigger, run in-process so the backend alone can demo it (design section 2's
 # decision table: "a lifespan thread also calls it so the backend alone demos"). Off by
@@ -94,6 +95,7 @@ def sqlite3_connect_for_watcher(data_dir, filename: str):
 
 app = FastAPI(title="Trade Document Pipeline", version="0.1.0", lifespan=lifespan)
 app.include_router(api_router)
+app.include_router(shipment_router)
 
 
 @app.get("/api/health")
