@@ -112,9 +112,7 @@ def _ask_gemini(
         f"Question: {question}"
         f"{prompt_text_extra}"
     )
-    result = client.generate(
-        agent=QUERY_AGENT, prompt=prompt, text=text, response_schema=SqlAnswer
-    )
+    result = client.generate(agent=QUERY_AGENT, prompt=prompt, text=text, response_schema=SqlAnswer)
     return result.value
 
 

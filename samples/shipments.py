@@ -541,10 +541,7 @@ class SampleEmail:
         between documents. Counted once per field, because one wrong HS code copied onto three
         documents is one problem to fix, not three."""
         bad = {
-            name
-            for d in self.documents
-            for name in FIELD_NAMES
-            if d.verdict(name) == "mismatch"
+            name for d in self.documents for name in FIELD_NAMES if d.verdict(name) == "mismatch"
         }
         bad |= {n for n in CROSS_CHECKED_FIELDS if self.cross_check(n)[0] == "inconsistent"}
         return tuple(n for n in FIELD_NAMES if n in bad)

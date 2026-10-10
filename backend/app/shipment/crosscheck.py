@@ -117,9 +117,7 @@ def _compared_row(entry: DocumentFieldValue, normalised: object | None) -> dict:
     }
 
 
-def _check_field(
-    field_name: str, carriers: list[DocumentFieldValue]
-) -> CrossCheckResult:
+def _check_field(field_name: str, carriers: list[DocumentFieldValue]) -> CrossCheckResult:
     if len(carriers) < 2:
         # R3.5: fewer than two carriers, nothing to compare.
         return CrossCheckResult(field_name=field_name, result="not_applicable", reason=None)

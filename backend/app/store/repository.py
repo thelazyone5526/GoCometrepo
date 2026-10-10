@@ -305,9 +305,7 @@ def insert_field_result(
 
 
 def list_field_results(conn: sqlite3.Connection, run_id: str) -> list[sqlite3.Row]:
-    return conn.execute(
-        "SELECT * FROM field_results WHERE run_id = ?", (run_id,)
-    ).fetchall()
+    return conn.execute("SELECT * FROM field_results WHERE run_id = ?", (run_id,)).fetchall()
 
 
 # --- llm_calls ----------------------------------------------------------------------------------
@@ -360,6 +358,7 @@ def list_llm_calls(conn: sqlite3.Connection, run_id: str) -> list[sqlite3.Row]:
     return conn.execute(
         "SELECT * FROM llm_calls WHERE run_id = ? ORDER BY created_at", (run_id,)
     ).fetchall()
+
 
 # --- part 2: emails, shipment reviews, cross-checks, drafts and the outbox ---------------------
 # Part 2 design section 3. Same rule as above: every read and write to the Part 2 tables goes
@@ -730,9 +729,7 @@ def list_shipments(conn: sqlite3.Connection, *, limit: int = 50) -> list[sqlite3
 
 
 def get_shipment(conn: sqlite3.Connection, shipment_id: str) -> sqlite3.Row | None:
-    return conn.execute(
-        f"{_SHIPMENT_SELECT} WHERE sr.shipment_id = ?", (shipment_id,)
-    ).fetchone()
+    return conn.execute(f"{_SHIPMENT_SELECT} WHERE sr.shipment_id = ?", (shipment_id,)).fetchone()
 
 
 def set_shipment_outcome(

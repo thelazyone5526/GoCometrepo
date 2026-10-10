@@ -88,13 +88,23 @@ _MESSY_PACKING = dict(_MESSY_INVOICE)
 # so each document type only gets the fields it actually carries; the rest are reported null,
 # exactly as a real Extractor reading a real page would.
 _ALL_FIELD_NAMES = (
-    "consignee", "hs_code", "port_of_loading", "port_of_discharge", "incoterms",
-    "goods_description", "gross_weight", "invoice_number",
+    "consignee",
+    "hs_code",
+    "port_of_loading",
+    "port_of_discharge",
+    "incoterms",
+    "goods_description",
+    "gross_weight",
+    "invoice_number",
 )
 _PRINTED_FIELDS = {
     "commercial_invoice": _ALL_FIELD_NAMES,
     "bill_of_lading": (
-        "consignee", "hs_code", "port_of_loading", "port_of_discharge", "gross_weight",
+        "consignee",
+        "hs_code",
+        "port_of_loading",
+        "port_of_discharge",
+        "gross_weight",
     ),
     "packing_list": ("consignee", "hs_code", "gross_weight", "invoice_number"),
 }
@@ -277,7 +287,9 @@ def test_clean_shipment_end_to_end_through_api_to_outbox(
     documents = repo.list_shipment_documents(conn, shipment_id)
     assert len(documents) == 3
     assert {d["doc_type"] for d in documents} == {
-        "commercial_invoice", "bill_of_lading", "packing_list",
+        "commercial_invoice",
+        "bill_of_lading",
+        "packing_list",
     }
     conn.close()
 

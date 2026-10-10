@@ -51,8 +51,7 @@ V_DOCUMENTS = ViewDoc(
         ColumnDoc("filename", "The uploaded file's original name."),
         ColumnDoc(
             "outcome",
-            "The run's final decision: 'auto_approved', 'human_review', or "
-            "'amendment_requested'.",
+            "The run's final decision: 'auto_approved', 'human_review', or 'amendment_requested'.",
         ),
         ColumnDoc(
             "reasoning",
@@ -119,9 +118,7 @@ V_FIELDS = ViewDoc(
         ColumnDoc(
             "extraction_confidence", "The Extractor's confidence in this value, from 0 to 1."
         ),
-        ColumnDoc(
-            "verdict_confidence", "The Validator's confidence in this verdict, from 0 to 1."
-        ),
+        ColumnDoc("verdict_confidence", "The Validator's confidence in this verdict, from 0 to 1."),
     ),
 )
 

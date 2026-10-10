@@ -67,7 +67,8 @@ def _judgement_response() -> RawResponse:
 def _route_response(outcome: str = "auto_approve") -> RawResponse:
     decision = RouteDecision(
         outcome=outcome,
-        reasoning="Every field matched the customer's rules." if outcome == "auto_approve"
+        reasoning="Every field matched the customer's rules."
+        if outcome == "auto_approve"
         else "See the field verdicts.",
         cited_fields=[],
         amendment_draft=None,
@@ -171,9 +172,7 @@ def test_a_clean_correct_document_is_auto_approved(
 def test_the_query_views_return_the_run(data_dir: Path, fake_transport: FakeTransport) -> None:
     result = _run_v1_c0(data_dir, fake_transport)
     conn = result["conn"]
-    row = conn.execute(
-        "SELECT * FROM v_documents WHERE run_id = ?", (result["run_id"],)
-    ).fetchone()
+    row = conn.execute("SELECT * FROM v_documents WHERE run_id = ?", (result["run_id"],)).fetchone()
     assert row is not None
     assert row["outcome"] == "auto_approved"
     assert row["matched_count"] == 8
@@ -276,9 +275,7 @@ def test_resume_incomplete_runs_finds_nothing_once_a_run_completed(
     data_dir: Path, fake_transport: FakeTransport
 ) -> None:
     result = _run_v1_c0(data_dir, fake_transport)
-    resumed = resume_incomplete_runs(
-        conn=result["conn"], checkpointer=_checkpointer(data_dir)[0]
-    )
+    resumed = resume_incomplete_runs(conn=result["conn"], checkpointer=_checkpointer(data_dir)[0])
     assert resumed == []
 
 

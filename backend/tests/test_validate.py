@@ -94,9 +94,7 @@ def _field_result(
 
 def _extraction_outcome(overrides: dict[str, FieldResult] | None = None) -> ExtractionOutcome:
     overrides = overrides or {}
-    fields = {
-        name: overrides.get(name, _field_result(V1_VALUES[name])) for name in FIELD_NAMES
-    }
+    fields = {name: overrides.get(name, _field_result(V1_VALUES[name])) for name in FIELD_NAMES}
     return ExtractionOutcome(document_type="commercial_invoice", fields=fields)
 
 

@@ -152,8 +152,11 @@ def query_answer_from_result(answer: object) -> QueryAnswerOut:
     kind = answer.kind
     if kind == "single_value":
         return QueryAnswerOut(
-            answer=answer.value, explanation=answer.explanation, sql=answer.sql,
-            columns=[], rows=[],
+            answer=answer.value,
+            explanation=answer.explanation,
+            sql=answer.sql,
+            columns=[],
+            rows=[],
         )
     if kind == "table":
         return QueryAnswerOut(

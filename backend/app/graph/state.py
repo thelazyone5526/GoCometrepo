@@ -78,8 +78,12 @@ def page_from_dict(data: dict[str, Any]) -> PreparedPage:
         low_confidence_share=data["quality"]["low_confidence_share"],
     )
     return PreparedPage(
-        index=data["index"], image=image, source=data["source"], spans=spans,
-        quality=quality, prepare_seconds=0.0,
+        index=data["index"],
+        image=image,
+        source=data["source"],
+        spans=spans,
+        quality=quality,
+        prepare_seconds=0.0,
     )
 
 

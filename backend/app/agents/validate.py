@@ -188,7 +188,8 @@ def validate(
                 )
             else:
                 field_verdicts[name] = _uncertain(
-                    name, "missing, but the page could not be read reliably",
+                    name,
+                    "missing, but the page could not be read reliably",
                     confidence=result.confidence,
                 )
             continue
@@ -257,7 +258,7 @@ def _run_judgement_call(
             text=text,
             response_schema=ValidationJudgementResult,
         )
-    except (LLMUnavailableError, BudgetExceededError):
+    except LLMUnavailableError, BudgetExceededError:
         return None
     return result.value
 

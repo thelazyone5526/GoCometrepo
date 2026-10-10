@@ -81,9 +81,7 @@ def _reject_unless_single_select(sql: str) -> str:
 
     first_word = body.split(None, 1)[0].upper()
     if first_word not in ("SELECT", "WITH"):
-        raise GateViolation(
-            f"only a SELECT statement is allowed, not {first_word!r}"
-        )
+        raise GateViolation(f"only a SELECT statement is allowed, not {first_word!r}")
     return body
 
 

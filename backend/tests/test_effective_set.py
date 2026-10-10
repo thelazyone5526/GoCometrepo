@@ -170,25 +170,35 @@ def test_cycle_2_carries_bol_and_packing_list_from_parent(conn: sqlite3.Connecti
     email_1 = _seed_email(conn, message_id="<m-1@su.example>")
     cycle_1 = _seed_shipment(conn, email_id=email_1, cycle_number=1)
     _own_email(
-        conn, shipment_id=cycle_1, filename="invoice.pdf", file_hash="h-inv-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="invoice.pdf",
+        file_hash="h-inv-1",
         doc_type="commercial_invoice",
     )
     _own_email(
-        conn, shipment_id=cycle_1, filename="bol.pdf", file_hash="h-bol-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="bol.pdf",
+        file_hash="h-bol-1",
         doc_type="bill_of_lading",
     )
     _own_email(
-        conn, shipment_id=cycle_1, filename="packing.pdf", file_hash="h-pack-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="packing.pdf",
+        file_hash="h-pack-1",
         doc_type="packing_list",
     )
 
     # Cycle 2: only a corrected invoice.
     email_2 = _seed_email(conn, message_id="<m-2@su.example>")
-    cycle_2 = _seed_shipment(
-        conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1
-    )
+    cycle_2 = _seed_shipment(conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1)
     _own_email(
-        conn, shipment_id=cycle_2, filename="invoice-v2.pdf", file_hash="h-inv-2",
+        conn,
+        shipment_id=cycle_2,
+        filename="invoice-v2.pdf",
+        file_hash="h-inv-2",
         doc_type="commercial_invoice",
     )
 
@@ -219,31 +229,39 @@ def test_cycle_3_walks_back_through_multiple_ancestors_for_the_nearest_match(
     email_1 = _seed_email(conn, message_id="<m-1@su.example>")
     cycle_1 = _seed_shipment(conn, email_id=email_1, cycle_number=1)
     _own_email(
-        conn, shipment_id=cycle_1, filename="invoice-v1.pdf", file_hash="h-inv-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="invoice-v1.pdf",
+        file_hash="h-inv-1",
         doc_type="commercial_invoice",
     )
     _own_email(
-        conn, shipment_id=cycle_1, filename="bol.pdf", file_hash="h-bol-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="bol.pdf",
+        file_hash="h-bol-1",
         doc_type="bill_of_lading",
     )
 
     email_2 = _seed_email(conn, message_id="<m-2@su.example>")
-    cycle_2 = _seed_shipment(
-        conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1
-    )
+    cycle_2 = _seed_shipment(conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1)
     _own_email(
-        conn, shipment_id=cycle_2, filename="invoice-v2.pdf", file_hash="h-inv-2",
+        conn,
+        shipment_id=cycle_2,
+        filename="invoice-v2.pdf",
+        file_hash="h-inv-2",
         doc_type="commercial_invoice",
     )
     # cycle_2's own effective set carries the BOL forward too (what a real run would persist).
     build_effective_set(conn, cycle_2)
 
     email_3 = _seed_email(conn, message_id="<m-3@su.example>")
-    cycle_3 = _seed_shipment(
-        conn, email_id=email_3, cycle_number=3, parent_shipment_id=cycle_2
-    )
+    cycle_3 = _seed_shipment(conn, email_id=email_3, cycle_number=3, parent_shipment_id=cycle_2)
     _own_email(
-        conn, shipment_id=cycle_3, filename="packing.pdf", file_hash="h-pack-3",
+        conn,
+        shipment_id=cycle_3,
+        filename="packing.pdf",
+        file_hash="h-pack-3",
         doc_type="packing_list",
     )
 
@@ -271,17 +289,21 @@ def test_own_document_is_never_duplicated_as_carried_over(conn: sqlite3.Connecti
     email_1 = _seed_email(conn, message_id="<m-1@su.example>")
     cycle_1 = _seed_shipment(conn, email_id=email_1, cycle_number=1)
     _own_email(
-        conn, shipment_id=cycle_1, filename="bol-v1.pdf", file_hash="h-bol-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="bol-v1.pdf",
+        file_hash="h-bol-1",
         doc_type="bill_of_lading",
     )
 
     email_2 = _seed_email(conn, message_id="<m-2@su.example>")
-    cycle_2 = _seed_shipment(
-        conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1
-    )
+    cycle_2 = _seed_shipment(conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1)
     # Cycle 2 resends its own corrected BOL, even though the ancestor also has one.
     _own_email(
-        conn, shipment_id=cycle_2, filename="bol-v2.pdf", file_hash="h-bol-2",
+        conn,
+        shipment_id=cycle_2,
+        filename="bol-v2.pdf",
+        file_hash="h-bol-2",
         doc_type="bill_of_lading",
     )
 
@@ -297,20 +319,27 @@ def test_building_twice_is_idempotent(conn: sqlite3.Connection) -> None:
     email_1 = _seed_email(conn, message_id="<m-1@su.example>")
     cycle_1 = _seed_shipment(conn, email_id=email_1, cycle_number=1)
     _own_email(
-        conn, shipment_id=cycle_1, filename="invoice.pdf", file_hash="h-inv-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="invoice.pdf",
+        file_hash="h-inv-1",
         doc_type="commercial_invoice",
     )
     _own_email(
-        conn, shipment_id=cycle_1, filename="bol.pdf", file_hash="h-bol-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="bol.pdf",
+        file_hash="h-bol-1",
         doc_type="bill_of_lading",
     )
 
     email_2 = _seed_email(conn, message_id="<m-2@su.example>")
-    cycle_2 = _seed_shipment(
-        conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1
-    )
+    cycle_2 = _seed_shipment(conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1)
     _own_email(
-        conn, shipment_id=cycle_2, filename="invoice-v2.pdf", file_hash="h-inv-2",
+        conn,
+        shipment_id=cycle_2,
+        filename="invoice-v2.pdf",
+        file_hash="h-inv-2",
         doc_type="commercial_invoice",
     )
 
@@ -326,16 +355,20 @@ def test_doc_type_never_carried_is_simply_absent(conn: sqlite3.Connection) -> No
     email_1 = _seed_email(conn, message_id="<m-1@su.example>")
     cycle_1 = _seed_shipment(conn, email_id=email_1, cycle_number=1)
     _own_email(
-        conn, shipment_id=cycle_1, filename="invoice.pdf", file_hash="h-inv-1",
+        conn,
+        shipment_id=cycle_1,
+        filename="invoice.pdf",
+        file_hash="h-inv-1",
         doc_type="commercial_invoice",
     )
 
     email_2 = _seed_email(conn, message_id="<m-2@su.example>")
-    cycle_2 = _seed_shipment(
-        conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1
-    )
+    cycle_2 = _seed_shipment(conn, email_id=email_2, cycle_number=2, parent_shipment_id=cycle_1)
     _own_email(
-        conn, shipment_id=cycle_2, filename="invoice-v2.pdf", file_hash="h-inv-2",
+        conn,
+        shipment_id=cycle_2,
+        filename="invoice-v2.pdf",
+        file_hash="h-inv-2",
         doc_type="commercial_invoice",
     )
 
@@ -349,7 +382,10 @@ def test_first_cycle_with_gaps_has_no_carried_over_entries(conn: sqlite3.Connect
     email_id = _seed_email(conn, message_id="<m-1@su.example>")
     shipment_id = _seed_shipment(conn, email_id=email_id, cycle_number=1)
     _own_email(
-        conn, shipment_id=shipment_id, filename="invoice.pdf", file_hash="h-inv",
+        conn,
+        shipment_id=shipment_id,
+        filename="invoice.pdf",
+        file_hash="h-inv",
         doc_type="commercial_invoice",
     )
 

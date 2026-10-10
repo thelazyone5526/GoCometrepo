@@ -39,6 +39,7 @@ def _checkpoint_connection(*, data_dir: Path | None = None) -> sqlite3.Connectio
     base.mkdir(parents=True, exist_ok=True)
     return sqlite3.connect(base / CHECKPOINTS_FILENAME, check_same_thread=False)
 
+
 # Default customer names, since design section 6's `GET /api/customers` (Phase 9, not built
 # this session) isn't available to the CLI. Kept tiny and explicit rather than guessed from
 # the rules file, so a typo'd customer_id fails clearly instead of silently.
@@ -218,9 +219,7 @@ def build_parser() -> argparse.ArgumentParser:
     dump_parser = sub.add_parser(
         "dump-llm-calls", help="Write every run's LLM call log to a Markdown file"
     )
-    dump_parser.add_argument(
-        "--out", default="data/llm-calls-report.md", help="output file path"
-    )
+    dump_parser.add_argument("--out", default="data/llm-calls-report.md", help="output file path")
     dump_parser.add_argument("--limit", type=int, default=50, help="max runs to include")
     dump_parser.set_defaults(func=cmd_dump_llm_calls)
 

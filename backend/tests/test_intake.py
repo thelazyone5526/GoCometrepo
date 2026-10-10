@@ -98,9 +98,7 @@ def test_a_good_pdf_is_accepted_and_a_document_is_created(conn: sqlite3.Connecti
     assert outcome == AttachmentOutcome("accepted", outcome.document_id, None)
     assert outcome.document_id is not None
 
-    row = conn.execute(
-        "SELECT * FROM documents WHERE id = ?", (outcome.document_id,)
-    ).fetchone()
+    row = conn.execute("SELECT * FROM documents WHERE id = ?", (outcome.document_id,)).fetchone()
     assert row is not None
     assert row["shipment_id"] == shipment_id
     assert row["filename"] == "invoice.pdf"

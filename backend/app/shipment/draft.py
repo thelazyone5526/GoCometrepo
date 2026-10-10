@@ -67,9 +67,7 @@ def _discrepancy_lines(discrepancies: tuple[Discrepancy, ...]) -> list[str]:
             )
         else:
             assert isinstance(d, CrossCheckDiscrepancy)
-            values = ", ".join(
-                f"{row.get('filename')}: {row.get('value')!r}" for row in d.compared
-            )
+            values = ", ".join(f"{row.get('filename')}: {row.get('value')!r}" for row in d.compared)
             lines.append(f"- {d.field_name} (across documents): {values}")
     return lines
 

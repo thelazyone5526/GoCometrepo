@@ -128,7 +128,9 @@ def _empty_extraction_response(document_type: str) -> RawResponse:
 
 def _route_response(outcome: str = "human_review") -> RawResponse:
     decision = RouteDecision(
-        outcome=outcome, reasoning="Needs a person to look at it.", cited_fields=[],
+        outcome=outcome,
+        reasoning="Needs a person to look at it.",
+        cited_fields=[],
         amendment_draft=None,
     )
     return RawResponse(
@@ -148,7 +150,9 @@ def _queue_one_document_run(fake_transport: FakeTransport, document_type: str) -
 
 
 def test_scanning_the_clean_shipment_creates_one_shipment_with_three_documents(
-    conn: sqlite3.Connection, checkpointer: SqliteSaver, fake_transport: FakeTransport,
+    conn: sqlite3.Connection,
+    checkpointer: SqliteSaver,
+    fake_transport: FakeTransport,
     inbox_dir: Path,
 ) -> None:
     _copy_sample("01-clean-shipment.eml", inbox_dir)
@@ -168,9 +172,7 @@ def test_scanning_the_clean_shipment_creates_one_shipment_with_three_documents(
 
     documents = repo.list_shipment_documents(conn, shipment_id)
     assert len(documents) == 3
-    assert {d["status"] for d in repo.list_attachments(conn, shipment["email_id"])} == {
-        "accepted"
-    }
+    assert {d["status"] for d in repo.list_attachments(conn, shipment["email_id"])} == {"accepted"}
     doc_types = {d["doc_type"] for d in documents}
     assert doc_types == {"commercial_invoice", "bill_of_lading", "packing_list"}
 
@@ -179,7 +181,9 @@ def test_scanning_the_clean_shipment_creates_one_shipment_with_three_documents(
 
 
 def test_scanning_the_unknown_customer_email_fails_with_no_processing(
-    conn: sqlite3.Connection, checkpointer: SqliteSaver, fake_transport: FakeTransport,
+    conn: sqlite3.Connection,
+    checkpointer: SqliteSaver,
+    fake_transport: FakeTransport,
     inbox_dir: Path,
 ) -> None:
     _copy_sample("03-unknown-customer.eml", inbox_dir)
@@ -198,7 +202,9 @@ def test_scanning_the_unknown_customer_email_fails_with_no_processing(
 
 
 def test_scanning_the_no_attachments_email_fails_with_a_reason(
-    conn: sqlite3.Connection, checkpointer: SqliteSaver, fake_transport: FakeTransport,
+    conn: sqlite3.Connection,
+    checkpointer: SqliteSaver,
+    fake_transport: FakeTransport,
     inbox_dir: Path,
 ) -> None:
     _copy_sample("04-no-attachments.eml", inbox_dir)
@@ -217,7 +223,9 @@ def test_scanning_the_no_attachments_email_fails_with_a_reason(
 
 
 def test_scanning_the_same_inbox_twice_creates_no_duplicates(
-    conn: sqlite3.Connection, checkpointer: SqliteSaver, fake_transport: FakeTransport,
+    conn: sqlite3.Connection,
+    checkpointer: SqliteSaver,
+    fake_transport: FakeTransport,
     inbox_dir: Path,
 ) -> None:
     _copy_sample("03-unknown-customer.eml", inbox_dir)
@@ -264,7 +272,9 @@ def _build_resubmission_eml(*, reference: str, message_id: str) -> bytes:
 
 
 def test_a_resubmission_links_to_the_earlier_cycle(
-    conn: sqlite3.Connection, checkpointer: SqliteSaver, fake_transport: FakeTransport,
+    conn: sqlite3.Connection,
+    checkpointer: SqliteSaver,
+    fake_transport: FakeTransport,
     inbox_dir: Path,
 ) -> None:
     _copy_sample("01-clean-shipment.eml", inbox_dir)
@@ -307,7 +317,9 @@ def test_a_resubmission_links_to_the_earlier_cycle(
 
 
 def test_scan_inbox_returns_touched_shipment_ids(
-    conn: sqlite3.Connection, checkpointer: SqliteSaver, fake_transport: FakeTransport,
+    conn: sqlite3.Connection,
+    checkpointer: SqliteSaver,
+    fake_transport: FakeTransport,
     inbox_dir: Path,
 ) -> None:
     assert scan_inbox(conn, checkpointer, inbox_dir=inbox_dir) == []  # nothing to scan yet
@@ -321,7 +333,9 @@ def test_scan_inbox_returns_touched_shipment_ids(
 
 
 def test_scan_inbox_on_a_missing_inbox_dir_returns_empty(
-    conn: sqlite3.Connection, checkpointer: SqliteSaver, tmp_path: Path,
+    conn: sqlite3.Connection,
+    checkpointer: SqliteSaver,
+    tmp_path: Path,
 ) -> None:
     assert scan_inbox(conn, checkpointer, inbox_dir=tmp_path / "does-not-exist") == []
 

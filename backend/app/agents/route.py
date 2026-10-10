@@ -76,7 +76,7 @@ def route(*, fields: dict[str, FieldVerdict], client: LLMClient) -> Decision:
         result = client.generate(
             agent="route", prompt=prompt, text=text, response_schema=RouteDecision
         )
-    except (LLMUnavailableError, BudgetExceededError):
+    except LLMUnavailableError, BudgetExceededError:
         return fallback_decision(fields)
 
     proposed: RouteDecision = result.value

@@ -71,7 +71,8 @@ def _judgement_response() -> RawResponse:
 def _route_response(outcome: str = "auto_approve") -> RawResponse:
     decision = RouteDecision(
         outcome=outcome,
-        reasoning="Every field matched the customer's rules." if outcome == "auto_approve"
+        reasoning="Every field matched the customer's rules."
+        if outcome == "auto_approve"
         else "See the field verdicts.",
         cited_fields=[],
         amendment_draft=None,
@@ -187,8 +188,14 @@ def test_upload_a_submission_sample_and_poll_to_completion(client, fake_transpor
     assert len(final["field_results"]) == 8
     field_names = {f["field_name"] for f in final["field_results"]}
     assert field_names == {
-        "consignee", "hs_code", "port_of_loading", "port_of_discharge", "incoterms",
-        "goods_description", "gross_weight", "invoice_number",
+        "consignee",
+        "hs_code",
+        "port_of_loading",
+        "port_of_discharge",
+        "incoterms",
+        "goods_description",
+        "gross_weight",
+        "invoice_number",
     }
 
 

@@ -62,8 +62,7 @@ def _matches_expected(field_name: str, value: str | None, expected) -> bool:
         if parsed is None:
             return False
         return (
-            parsed.unit == expected.value.unit
-            and abs(parsed.amount - expected.value.amount) < 0.01
+            parsed.unit == expected.value.unit and abs(parsed.amount - expected.value.amount) < 0.01
         )
     if field_name in _STRUCTURED:
         return _STRUCTURED[field_name](value) == expected.value

@@ -10,9 +10,7 @@ import pytest
 from app.shipment.crosscheck import DocumentFieldValue, cross_check
 
 EXPECTED = {
-    "commercial_invoice": frozenset(
-        {"consignee", "hs_code", "gross_weight", "invoice_number"}
-    ),
+    "commercial_invoice": frozenset({"consignee", "hs_code", "gross_weight", "invoice_number"}),
     "bill_of_lading": frozenset({"consignee", "hs_code", "gross_weight"}),
     "packing_list": frozenset({"consignee", "hs_code", "gross_weight", "invoice_number"}),
 }

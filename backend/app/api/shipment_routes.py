@@ -366,9 +366,7 @@ def post_rerun(shipment_id: str, document_id: str) -> RerunResponseOut:
         if shipment is None:
             raise HTTPException(status_code=404, detail=f"No such shipment: {shipment_id}")
 
-        rows = {
-            row["document_id"]: row for row in repo.list_shipment_documents(conn, shipment_id)
-        }
+        rows = {row["document_id"]: row for row in repo.list_shipment_documents(conn, shipment_id)}
         row = rows.get(document_id)
         if row is None:
             raise HTTPException(

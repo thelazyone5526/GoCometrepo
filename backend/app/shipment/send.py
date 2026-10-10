@@ -103,8 +103,10 @@ def send_draft(
         raise AlreadySentError(shipment_id) from exc
 
     shipment = repo.get_shipment(conn, shipment_id)
-    review_state = "approved_sent" if shipment and shipment["outcome"] == "auto_approve" else (
-        "amendment_sent"
+    review_state = (
+        "approved_sent"
+        if shipment and shipment["outcome"] == "auto_approve"
+        else ("amendment_sent")
     )
     # The send already happened in the simulated outbox above; a failure here must not look
     # like it was undone -- there is nothing to roll back and no attempt is made to.

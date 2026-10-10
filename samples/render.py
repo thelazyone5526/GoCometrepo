@@ -523,9 +523,7 @@ def render_bol(bol: BillOfLading) -> RenderedDocument:
     )
 
     # Row B: consignee and notify party
-    consignee_lines = [(f.consignee.printed or "", "B")] + [
-        (s, "") for s in bol.consignee_address
-    ]
+    consignee_lines = [(f.consignee.printed or "", "B")] + [(s, "") for s in bol.consignee_address]
     notify_lines = [(bol.notify_party.name, "B")] + [(s, "") for s in bol.notify_party.address]
     _box(pdf, (LEFT, 63, HALF, 26), "CONSIGNEE", consignee_lines)
     _box(pdf, (LEFT + HALF, 63, HALF, 26), "NOTIFY PARTY", notify_lines)
@@ -611,9 +609,7 @@ def render_bol(bol: BillOfLading) -> RenderedDocument:
     pdf.multi_cell(WIDTH - 1, 3.6, BOL_TERMS)
     y += 38
 
-    delivery_lines = [(bol.notify_party.name, "B")] + [
-        (s, "") for s in bol.notify_party.address
-    ]
+    delivery_lines = [(bol.notify_party.name, "B")] + [(s, "") for s in bol.notify_party.address]
     _box(
         pdf,
         (LEFT, y, HALF, 26),

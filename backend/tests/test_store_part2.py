@@ -506,9 +506,7 @@ def test_find_document_by_hash_in_chain(conn: sqlite3.Connection) -> None:
     assert found is not None and found.id == document.id
 
     assert (
-        repo.find_document_by_hash_in_chain(
-            conn, shipment_ids=[cycle2], file_hash="hash-invoice"
-        )
+        repo.find_document_by_hash_in_chain(conn, shipment_ids=[cycle2], file_hash="hash-invoice")
         is None
     )
     assert repo.find_document_by_hash_in_chain(conn, shipment_ids=[], file_hash="x") is None

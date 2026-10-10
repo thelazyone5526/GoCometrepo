@@ -209,16 +209,31 @@ def _seed_clean_shipment(conn: sqlite3.Connection) -> str:
     )
     shipment_id = _seed_shipment(conn, email_id=email_id)
     _seed_document_with_run(
-        conn, shipment_id=shipment_id, email_id=email_id, filename="invoice.pdf",
-        file_hash="h-inv", doc_type="commercial_invoice", fields=_CLEAN_INVOICE_FIELDS,
+        conn,
+        shipment_id=shipment_id,
+        email_id=email_id,
+        filename="invoice.pdf",
+        file_hash="h-inv",
+        doc_type="commercial_invoice",
+        fields=_CLEAN_INVOICE_FIELDS,
     )
     _seed_document_with_run(
-        conn, shipment_id=shipment_id, email_id=email_id, filename="bol.pdf",
-        file_hash="h-bol", doc_type="bill_of_lading", fields=_CLEAN_BOL_FIELDS,
+        conn,
+        shipment_id=shipment_id,
+        email_id=email_id,
+        filename="bol.pdf",
+        file_hash="h-bol",
+        doc_type="bill_of_lading",
+        fields=_CLEAN_BOL_FIELDS,
     )
     _seed_document_with_run(
-        conn, shipment_id=shipment_id, email_id=email_id, filename="packing.pdf",
-        file_hash="h-pack", doc_type="packing_list", fields=_CLEAN_PACKING_FIELDS,
+        conn,
+        shipment_id=shipment_id,
+        email_id=email_id,
+        filename="packing.pdf",
+        file_hash="h-pack",
+        doc_type="packing_list",
+        fields=_CLEAN_PACKING_FIELDS,
     )
     return shipment_id
 
@@ -240,20 +255,34 @@ def _seed_messy_shipment(conn: sqlite3.Connection) -> str:
     ]
     bol_fields = [
         {
-            "field_name": "consignee", "value": "Zenith Trading Holdings", "verdict": "mismatch",
-            "found": "Zenith Trading Holdings", "expected": "ACME Electronics Pte. Ltd.",
-            "rule_id": "R-CON-1", "verdict_reason": "not the registered consignee",
+            "field_name": "consignee",
+            "value": "Zenith Trading Holdings",
+            "verdict": "mismatch",
+            "found": "Zenith Trading Holdings",
+            "expected": "ACME Electronics Pte. Ltd.",
+            "rule_id": "R-CON-1",
+            "verdict_reason": "not the registered consignee",
         },
         {"field_name": "hs_code", "value": "847130", "verdict": "match"},
         {"field_name": "gross_weight", "value": "862.40 KG", "verdict": "match"},
     ]
     _seed_document_with_run(
-        conn, shipment_id=shipment_id, email_id=email_id, filename="invoice.pdf",
-        file_hash="h-inv-2", doc_type="commercial_invoice", fields=invoice_fields,
+        conn,
+        shipment_id=shipment_id,
+        email_id=email_id,
+        filename="invoice.pdf",
+        file_hash="h-inv-2",
+        doc_type="commercial_invoice",
+        fields=invoice_fields,
     )
     _seed_document_with_run(
-        conn, shipment_id=shipment_id, email_id=email_id, filename="bol.pdf",
-        file_hash="h-bol-2", doc_type="bill_of_lading", fields=bol_fields,
+        conn,
+        shipment_id=shipment_id,
+        email_id=email_id,
+        filename="bol.pdf",
+        file_hash="h-bol-2",
+        doc_type="bill_of_lading",
+        fields=bol_fields,
     )
     return shipment_id
 
@@ -334,7 +363,10 @@ def test_get_shipment_detail_includes_every_field_and_cross_check(client, conn) 
     assert len(body["documents"]) == 3
     assert len(body["field_results"]) > 0
     assert {cc["field_name"] for cc in body["cross_checks"]} == {
-        "consignee", "hs_code", "gross_weight", "invoice_number",
+        "consignee",
+        "hs_code",
+        "gross_weight",
+        "invoice_number",
     }
     assert all(cc["result"] == "consistent" for cc in body["cross_checks"])
     assert body["uncertain_items"] == []
@@ -368,15 +400,27 @@ def test_shipment_still_processing_has_no_outcome_yet(client, conn) -> None:
     )
     shipment_id = _seed_shipment(conn, email_id=email_id)
     document = repo.create_document_for_shipment(
-        conn, shipment_id=shipment_id, filename="invoice.pdf", file_hash="h-pending",
-        mime_type="application/pdf", page_count=1, has_text_layer=True,
-        stored_path=Path("uploads/h-pending/original.pdf"), doc_type=None,
+        conn,
+        shipment_id=shipment_id,
+        filename="invoice.pdf",
+        file_hash="h-pending",
+        mime_type="application/pdf",
+        page_count=1,
+        has_text_layer=True,
+        stored_path=Path("uploads/h-pending/original.pdf"),
+        doc_type=None,
     )
     run_id = repo.new_id()
     repo.create_run(conn, run_id=run_id, document_id=document.id)  # left 'processing'
     repo.add_shipment_document(
-        conn, shipment_id=shipment_id, document_id=document.id, run_id=run_id,
-        doc_type=None, origin="own_email", source_shipment_id=None, source_cycle=None,
+        conn,
+        shipment_id=shipment_id,
+        document_id=document.id,
+        run_id=run_id,
+        doc_type=None,
+        origin="own_email",
+        source_shipment_id=None,
+        source_cycle=None,
     )
     conn.close()
 

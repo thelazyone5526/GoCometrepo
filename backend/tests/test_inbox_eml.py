@@ -143,9 +143,7 @@ def test_missing_subject_is_empty_string() -> None:
 
 
 def test_unparseable_from_header_falls_back_to_raw_text() -> None:
-    raw = (
-        b"From: not an address at all\r\nSubject: hi\r\nMessage-ID: <bad@x>\r\n\r\nbody\r\n"
-    )
+    raw = b"From: not an address at all\r\nSubject: hi\r\nMessage-ID: <bad@x>\r\n\r\nbody\r\n"
 
     sender = parse_eml(raw).sender
 

@@ -253,9 +253,7 @@ def _process_email(
 
 
 def _stored_path_for(conn, document_id: str) -> Path:
-    row = conn.execute(
-        "SELECT stored_path FROM documents WHERE id = ?", (document_id,)
-    ).fetchone()
+    row = conn.execute("SELECT stored_path FROM documents WHERE id = ?", (document_id,)).fetchone()
     return Path(row["stored_path"])
 
 
