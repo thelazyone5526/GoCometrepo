@@ -68,6 +68,68 @@ class ShipmentDecision:
     uncertain_count: int
 
 
+# --- discrepancies and uncertain items ----------------------------------------------------------
+#
+# Pulled out as its own pass over the inputs, rather than kept private to `decide_shipment`, so
+# that `shipment/draft.py` can list exactly the same discrepancies the reasoning text and the
+# counts are built from (design section 2: the draft must contain no value absent from the
+# stored results, R6.5) -- one source of truth, not two lists that could silently drift apart.
+
+
+@dataclass(frozen=True)
+class FieldMismatch:
+    kind: Literal["field_mismatch"] = "field_mismatch"
+    document_filename: str = ""
+    field_name: str = ""
+    found: str | None = None
+    expected: str | None = None
+    reason: str | None = None
+
+
+@dataclass(frozen=True)
+class CrossCheckDiscrepancy:
+    kind: Literal["cross_check"] = "cross_check"
+    field_name: str = ""
+    reason: str | None = None
+    compared: tuple[dict, ...] = ()
+
+
+Discrepancy = FieldMismatch | CrossCheckDiscrepancy
+
+
+@dataclass(frozen=True)
+class UncertainField:
+    kind: Literal["field"] = "field"
+    document_filename: str = ""
+    field_name: str = ""
+    reason: str | None = None
+
+
+@dataclass(frozen=True)
+class UncertainCrossCheck:
+    kind: Literal["cross_check"] = "cross_check"
+    field_name: str = ""
+    reason: str | None = None
+
+
+@dataclass(frozen=True)
+class UncertainDocType:
+    kind: Literal["doc_type"] = "doc_type"
+    document_filename: str = ""
+
+
+UncertainItem = UncertainField | UncertainCrossCheck | UncertainDocType
+
+
+@dataclass(frozen=True)
+class ShipmentItems:
+    """The full breakdown `decide_shipment` and `render_draft` both read from."""
+
+    failed_documents: tuple[DocumentEntry, ...]
+    discrepancies: tuple[Discrepancy, ...]
+    uncertain_items: tuple[UncertainItem, ...]
+
+
 def _doc_type_uncertain(doc: DocumentEntry) -> bool:
     return doc.doc_type is None or doc.doc_type == "uncertain"
 
@@ -77,6 +139,64 @@ def _expected_verdicts(doc: DocumentEntry) -> list[FieldVerdictEntry]:
     return [v for v in doc.field_verdicts if v.verdict != "not_applicable"]
 
 
+def collect_shipment_items(
+    documents: list[DocumentEntry],
+    cross_checks: dict[str, CrossCheckResult],
+) -> ShipmentItems:
+    """One pass over the stored results that both `decide_shipment` (counts and reasoning) and
+    `render_draft` (the amendment text and "needs your check" list) build on. Order is stable
+    (document order, then cross-check field order) so re-running on unchanged results gives the
+    same breakdown every time (R4.5)."""
+    failed_docs = tuple(d for d in documents if not d.succeeded)
+    uncertain_type_docs = [d for d in documents if d.succeeded and _doc_type_uncertain(d)]
+
+    discrepancies: list[Discrepancy] = []
+    uncertain_items: list[UncertainItem] = [
+        UncertainDocType(document_filename=d.filename) for d in uncertain_type_docs
+    ]
+
+    for doc in documents:
+        if not doc.succeeded:
+            continue
+        for v in _expected_verdicts(doc):
+            if v.verdict == "mismatch":
+                discrepancies.append(
+                    FieldMismatch(
+                        document_filename=doc.filename,
+                        field_name=v.field_name,
+                        found=v.found,
+                        expected=v.expected,
+                        reason=v.reason,
+                    )
+                )
+            elif v.verdict == "uncertain":
+                uncertain_items.append(
+                    UncertainField(
+                        document_filename=doc.filename,
+                        field_name=v.field_name,
+                        reason=v.reason,
+                    )
+                )
+
+    for name, result in cross_checks.items():
+        if result.result == "inconsistent":
+            discrepancies.append(
+                CrossCheckDiscrepancy(
+                    field_name=name,
+                    reason=result.reason,
+                    compared=tuple(result.compared),
+                )
+            )
+        elif result.result == "uncertain":
+            uncertain_items.append(UncertainCrossCheck(field_name=name, reason=result.reason))
+
+    return ShipmentItems(
+        failed_documents=failed_docs,
+        discrepancies=tuple(discrepancies),
+        uncertain_items=tuple(uncertain_items),
+    )
+
+
 def decide_shipment(
     documents: list[DocumentEntry],
     cross_checks: dict[str, CrossCheckResult],
@@ -84,35 +204,13 @@ def decide_shipment(
     """R4.1-R4.6: the one shipment-level decision. Pure function -- no I/O, no `app.llm`
     import anywhere in this module (see `test_decision.py`'s static check, mirroring
     `test_crosscheck.py`'s)."""
-    failed_docs = [d for d in documents if not d.succeeded]
-    uncertain_type_docs = [d for d in documents if d.succeeded and _doc_type_uncertain(d)]
+    items = collect_shipment_items(documents, cross_checks)
 
-    mismatches: list[tuple[DocumentEntry, FieldVerdictEntry]] = []
-    uncertain_fields: list[tuple[DocumentEntry, FieldVerdictEntry]] = []
-    for doc in documents:
-        if not doc.succeeded:
-            continue
-        for v in _expected_verdicts(doc):
-            if v.verdict == "mismatch":
-                mismatches.append((doc, v))
-            elif v.verdict == "uncertain":
-                uncertain_fields.append((doc, v))
-
-    inconsistent_checks = [
-        (name, result) for name, result in cross_checks.items() if result.result == "inconsistent"
-    ]
-    uncertain_checks = [
-        (name, result) for name, result in cross_checks.items() if result.result == "uncertain"
-    ]
-
-    discrepancy_count = len(mismatches) + len(inconsistent_checks)
-    uncertain_count = len(uncertain_fields) + len(uncertain_checks) + len(uncertain_type_docs)
+    discrepancy_count = len(items.discrepancies)
+    uncertain_count = len(items.uncertain_items)
 
     has_discrepancy = discrepancy_count > 0
-    forces_human_review = (
-        bool(failed_docs or uncertain_type_docs or uncertain_fields or uncertain_checks)
-        or not documents
-    )
+    forces_human_review = bool(items.failed_documents or items.uncertain_items) or not documents
 
     if not forces_human_review and not has_discrepancy:
         outcome: ShipmentOutcome = "auto_approve"
@@ -121,16 +219,7 @@ def decide_shipment(
     else:
         outcome = "amendment_request"
 
-    reasoning = _build_reasoning(
-        outcome=outcome,
-        documents=documents,
-        failed_docs=failed_docs,
-        uncertain_type_docs=uncertain_type_docs,
-        mismatches=mismatches,
-        uncertain_fields=uncertain_fields,
-        inconsistent_checks=inconsistent_checks,
-        uncertain_checks=uncertain_checks,
-    )
+    reasoning = _build_reasoning(outcome=outcome, documents=documents, items=items)
 
     return ShipmentDecision(
         outcome=outcome,
@@ -144,12 +233,7 @@ def _build_reasoning(
     *,
     outcome: ShipmentOutcome,
     documents: list[DocumentEntry],
-    failed_docs: list[DocumentEntry],
-    uncertain_type_docs: list[DocumentEntry],
-    mismatches: list[tuple[DocumentEntry, FieldVerdictEntry]],
-    uncertain_fields: list[tuple[DocumentEntry, FieldVerdictEntry]],
-    inconsistent_checks: list[tuple[str, CrossCheckResult]],
-    uncertain_checks: list[tuple[str, CrossCheckResult]],
+    items: ShipmentItems,
 ) -> str:
     """R4.5: "a code-generated reasoning text that lists each discrepancy, uncertain item and
     failed document" -- built only from the inputs, so re-running on unchanged results gives
@@ -159,27 +243,31 @@ def _build_reasoning(
 
     lines: list[str] = []
 
-    for doc in failed_docs:
+    for doc in items.failed_documents:
         reason = doc.failure_reason or "no reason recorded"
         lines.append(f"{doc.filename} failed processing: {reason}")
 
-    for doc in uncertain_type_docs:
-        lines.append(f"{doc.filename}'s document type could not be determined")
+    for item in items.uncertain_items:
+        if isinstance(item, UncertainDocType):
+            lines.append(f"{item.document_filename}'s document type could not be determined")
 
-    for doc, verdict in mismatches:
-        lines.append(
-            f"{doc.filename}: {verdict.field_name} is a mismatch "
-            f"(found {verdict.found!r}, expected {verdict.expected!r})"
-        )
+    for discrepancy in items.discrepancies:
+        if isinstance(discrepancy, FieldMismatch):
+            lines.append(
+                f"{discrepancy.document_filename}: {discrepancy.field_name} is a mismatch "
+                f"(found {discrepancy.found!r}, expected {discrepancy.expected!r})"
+            )
+        else:
+            lines.append(
+                f"cross-document check for {discrepancy.field_name} is inconsistent: "
+                f"{discrepancy.reason}"
+            )
 
-    for name, result in inconsistent_checks:
-        lines.append(f"cross-document check for {name} is inconsistent: {result.reason}")
-
-    for doc, verdict in uncertain_fields:
-        lines.append(f"{doc.filename}: {verdict.field_name} is uncertain")
-
-    for name, result in uncertain_checks:
-        lines.append(f"cross-document check for {name} is uncertain: {result.reason}")
+    for item in items.uncertain_items:
+        if isinstance(item, UncertainField):
+            lines.append(f"{item.document_filename}: {item.field_name} is uncertain")
+        elif isinstance(item, UncertainCrossCheck):
+            lines.append(f"cross-document check for {item.field_name} is uncertain: {item.reason}")
 
     if outcome == "auto_approve":
         return "Every document in the shipment matched. Recommended for approval."
@@ -193,9 +281,18 @@ def _build_reasoning(
 
 
 __all__ = [
+    "CrossCheckDiscrepancy",
+    "Discrepancy",
     "DocumentEntry",
+    "FieldMismatch",
     "FieldVerdictEntry",
     "ShipmentDecision",
+    "ShipmentItems",
     "ShipmentOutcome",
+    "UncertainCrossCheck",
+    "UncertainDocType",
+    "UncertainField",
+    "UncertainItem",
+    "collect_shipment_items",
     "decide_shipment",
 ]
