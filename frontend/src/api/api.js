@@ -92,3 +92,63 @@ export async function postQuery(question) {
     }),
   )
 }
+
+// --- Part 2: shipments (design §2, requirements 8-11) -------------------------------------
+// No mock branch: Part 2 was built against the real backend from the start, so there is no
+// `mockData.js` equivalent to keep in sync, unlike the Part 1 functions above.
+
+/** GET /api/shipments — state 1's list. */
+export async function listShipments() {
+  return asJson(await fetch('/api/shipments'))
+}
+
+/** GET /api/shipments/{id} — states 2 and 3's payload in one call. */
+export async function getShipment(shipmentId) {
+  return asJson(await fetch(`/api/shipments/${encodeURIComponent(shipmentId)}`))
+}
+
+/** GET /api/shipments/{id}/draft */
+export async function getDraft(shipmentId) {
+  return asJson(await fetch(`/api/shipments/${encodeURIComponent(shipmentId)}/draft`))
+}
+
+/** PUT /api/shipments/{id}/draft — store an operator edit as a new version. */
+export async function putDraft(shipmentId, { recipient, subject, body }) {
+  return asJson(
+    await fetch(`/api/shipments/${encodeURIComponent(shipmentId)}/draft`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient, subject, body }),
+    }),
+  )
+}
+
+/** POST /api/shipments/{id}/send — the operator's Send. */
+export async function sendDraft(shipmentId, { confirmed = false } = {}) {
+  return asJson(
+    await fetch(`/api/shipments/${encodeURIComponent(shipmentId)}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmed }),
+    }),
+  )
+}
+
+/** POST /api/shipments/{id}/reviewed — reviewed without sending. */
+export async function markReviewedNoSend(shipmentId) {
+  return asJson(
+    await fetch(`/api/shipments/${encodeURIComponent(shipmentId)}/reviewed`, {
+      method: 'POST',
+    }),
+  )
+}
+
+/** POST /api/shipments/{id}/documents/{document_id}/rerun */
+export async function rerunDocument(shipmentId, documentId) {
+  return asJson(
+    await fetch(
+      `/api/shipments/${encodeURIComponent(shipmentId)}/documents/${encodeURIComponent(documentId)}/rerun`,
+      { method: 'POST' },
+    ),
+  )
+}

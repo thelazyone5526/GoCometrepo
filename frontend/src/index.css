@@ -176,6 +176,67 @@ button:disabled {
   border-color: #1a56c4;
 }
 
+/* Part 2 shipment-level outcomes (shipment_reviews.outcome): present-tense names, distinct
+   from the Part 1 run outcomes above. */
+.outcome-badge--auto_approve {
+  background: #e3f6e8;
+  color: #1c6b32;
+  border-color: #1c6b32;
+}
+
+.outcome-badge--amendment_request {
+  background: #fdeaea;
+  color: #a4160a;
+  border-color: #a4160a;
+}
+
+.outcome-badge--failed {
+  background: #f1f2f4;
+  color: #4a5261;
+  border-color: #4a5261;
+}
+
+.run-list-item__reason {
+  font-size: 0.8rem;
+  color: #a4160a;
+}
+
+.run-list-item__counts {
+  font-size: 0.8rem;
+  color: #4a5261;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.view-toggle button {
+  background: #f5f6f8;
+  color: #1a1a1a;
+  border: 1px solid #d7dbe0;
+}
+
+.view-toggle button[aria-pressed='true'] {
+  background: #1a56c4;
+  color: #fff;
+  border-color: #1a56c4;
+}
+
+.document-progress-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cross-check-values {
+  margin: 0;
+  padding-left: 1rem;
+}
+
 .progress-steps {
   list-style: none;
   display: flex;
@@ -236,6 +297,14 @@ button:disabled {
 }
 
 .decision-outcome--amendment_requested {
+  color: #a4160a;
+}
+
+.decision-outcome--auto_approve {
+  color: #1c6b32;
+}
+
+.decision-outcome--amendment_request {
   color: #a4160a;
 }
 

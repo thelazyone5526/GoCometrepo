@@ -39,3 +39,58 @@ export function decisionSourceLabel(source) {
 }
 
 export const STEP_ORDER = ['prepare', 'extract', 'validate', 'route']
+
+// Part 2 (part2-shipment-workflow design §2): the shipment-level outcome names, from
+// `shipment/decision.py`'s `ShipmentOutcome` — present-tense, unlike `runs.outcome` above,
+// since `shipment_reviews.outcome` stores exactly what the Router/decision module emits
+// with no §10.1-style remapping.
+export const SHIPMENT_OUTCOME_LABELS = {
+  auto_approve: 'Recommended for approval',
+  human_review: 'Needs human review',
+  amendment_request: 'Amendment requested',
+}
+
+export function shipmentOutcomeLabel(outcome) {
+  return SHIPMENT_OUTCOME_LABELS[outcome] ?? outcome ?? 'Not decided yet'
+}
+
+// `shipment_reviews.review_state` (design §3): pending_review, approved_sent,
+// amendment_sent, reviewed_no_send, failed.
+export const REVIEW_STATE_LABELS = {
+  pending_review: 'Pending review',
+  approved_sent: 'Approved and sent',
+  amendment_sent: 'Amendment sent',
+  reviewed_no_send: 'Reviewed, not sent',
+  failed: 'Failed',
+}
+
+export function reviewStateLabel(state) {
+  return REVIEW_STATE_LABELS[state] ?? state ?? 'Unknown'
+}
+
+// `shipment_documents`/`runs` document status, as `api/shipment_routes.py::_document_status`
+// reports it: waiting (no run started yet), processing, completed — plus a derived "failed"
+// when a completed run carries an escalation reason (requirement 8.2, 8.4).
+export function documentStatusMeta(doc) {
+  if (doc.run_status === 'waiting') {
+    return { label: 'Waiting', icon: '…' }
+  }
+  if (doc.run_status === 'processing') {
+    return { label: 'Processing', icon: '…' }
+  }
+  if (doc.run_escalation_reason) {
+    return { label: 'Failed', icon: '✕' }
+  }
+  return { label: 'Done', icon: '✓' }
+}
+
+export const CROSS_CHECK_META = {
+  consistent: { label: 'Consistent', icon: '✓' },
+  inconsistent: { label: 'Inconsistent', icon: '✕' },
+  uncertain: { label: 'Uncertain', icon: '?' },
+  not_applicable: { label: 'Not applicable', icon: '–' },
+}
+
+export function crossCheckMeta(result) {
+  return CROSS_CHECK_META[result] ?? { label: result ?? 'Unknown', icon: '?' }
+}
