@@ -318,6 +318,117 @@ GoCometrepo/
   data/                        git-ignored: app.db, checkpoints.db, uploads/
 ```
 
+## Part 2: the shipment workflow
+
+Part 2 connects the Part 1 pipeline to the real CG (Cargo/Control Group) workflow: an email
+arrives with one or more documents about a shipment, the system checks each document and then
+compares them against each other, decides one outcome for the whole shipment, drafts a reply,
+and waits for an operator to review and send it. Nothing is sent automatically — the operator's
+Send click is the only path that ever marks a reply sent.
+
+What's new, on top of everything in Part 1:
+- **Inbox watcher** (`backend/app/inbox/`) — reads `.eml` files from a watched folder, records
+  each one, and starts the Part 1 pipeline on every attachment.
+- **Cross-document checker** (`backend/app/shipment/crosscheck.py`) — compares consignee,
+  HS code, gross weight and invoice number across a shipment's documents, in plain code, with
+  zero model calls.
+- **Shipment decision** (`backend/app/shipment/decision.py`) — one outcome
+  (`auto_approve` / `human_review` / `amendment_request`) for the whole shipment, settled in
+  code from the stored per-document results and the cross-checks, also zero model calls.
+- **Draft and send** (`backend/app/shipment/draft.py`, `send.py`) — fills an approval or
+  amendment reply from a template, and the one function anywhere in the codebase that can mark
+  it sent, reachable only from the operator's Send click.
+- **Shipment API and screen** (`backend/app/api/shipment_routes.py`,
+  `frontend/src/components/Shipment*.jsx`, `DraftPanel.jsx`, `DiscrepancyDetail.jsx`) — a
+  four-state screen: incoming/processing, verification result, discrepancy detail, and the
+  editable draft.
+
+The full design, every design-session decision and the reasoning behind it, is in
+[`.kiro/specs/part2-shipment-workflow/design.md`](../.kiro/specs/part2-shipment-workflow/design.md)
+and [`docs/part2-decisions.md`](docs/part2-decisions.md). Teaching docs for each new piece are
+in [`Ansh/`](../Ansh/), numbered 13 onward.
+
+### Dropping a sample email into the inbox
+
+Four ready-made `.eml` files live in `samples/inbox/`, generated the same way the Part 1
+samples are (`python -m samples.generate`, from the repo root):
+
+| File | What it demonstrates |
+|---|---|
+| `01-clean-shipment.eml` | SHP-1042, three documents (invoice, bill of lading, packing list), everything agrees and matches ACME's rules — recommended for approval |
+| `02-messy-shipment.eml` | SHP-1043, two problems: an HS code not on ACME's approved list, and the bill of lading naming a different consignee than the invoice and packing list — amendment requested |
+| `03-unknown-customer.eml` | A well-formed email whose subject names no customer this install has rules for — recorded as `failed`, with a reason, and no processing starts |
+| `04-no-attachments.eml` | A well-formed email with no attachments at all — same: recorded as `failed`, nothing processed |
+
+To see one picked up, start the watcher and copy a file into the folder it watches
+(`samples/inbox/` by default — the same folder the sample files already live in, so the
+watcher's own default scan will pick them up without copying anything):
+
+```powershell
+# Terminal 1: the backend API, as in Part 1
+cd backend
+.venv\Scripts\python -m app.main
+
+# Terminal 2: the inbox watcher, a separate process (the production shape — ingestion as its
+# own worker, not part of the web app). Scans every 2 seconds.
+cd backend
+.venv\Scripts\python -m app.cli watch
+```
+
+Or, to process the inbox once without a long-running watcher:
+
+```powershell
+cd backend
+.venv\Scripts\python -m app.cli scan-inbox
+```
+
+The backend's `lifespan` can also run the watcher in-process, so a reviewer who only starts
+the backend still sees the trigger fire, with no second terminal: set
+`ENABLE_INBOX_WATCHER=1` before starting `python -m app.main`.
+
+Open http://localhost:5173 (or `http://127.0.0.1:8000` once `frontend/dist` is built), switch
+to the **Shipments** view with the toggle at the top, and the picked-up email appears in the
+list within a couple of seconds, moving from "N of M documents done" to its outcome as the
+pipeline finishes each attachment.
+
+### The four screen states
+
+1. **Incoming and processing** — the shipment list: sender, subject, received time,
+   attachment count, and a live "N of M documents done" count while anything is still
+   running, replaced by the outcome once decided. A failed shipment (unknown customer, no
+   attachments) still shows up, with its reason.
+2. **Verification result** — outcome, the code-generated reasoning, matched/mismatched/
+   uncertain counts, every field of every document in the effective set, and the
+   cross-document checks in their own section. Problems are listed first, then uncertain
+   items, then matches.
+3. **Discrepancy detail** — click any flagged field or inconsistent cross-check to see found
+   vs expected, the rule ID, the source snippet, and the page image with the matched location
+   drawn on it when it's available.
+4. **Editable draft** — the generated reply, pre-filled and editable, with an "edited" marker
+   per changed field, a reset, and Send disabled until recipient and body are both filled in.
+   Sending an approval on a shipment that still has discrepancies or uncertain items asks for
+   confirmation first. "Mark reviewed, don't send" records the operator's call without
+   touching the outbox.
+
+### Running the Part 2 tests
+
+```powershell
+cd backend
+.venv\Scripts\python -m pytest
+```
+
+Part 2's tests run in the same default suite as Part 1's — no network, no Gemini key, a
+scripted fake transport standing in for every model call. Worth knowing about specifically:
+
+- `tests/test_decision.py` sweeps every combination of document status, Doc_Type, field
+  verdict and cross-check result (mirroring Part 1's own 6561-case guardrail sweep) and
+  asserts `auto_approve` only ever comes out under the five documented conditions.
+- `tests/test_send.py` includes a repo-wide search that fails if any code outside
+  `app/shipment/send.py` ever writes to the simulated outbox or marks a draft sent.
+- `tests/test_end_to_end_shipments.py` drives the two real sample shipments all the way
+  through: `.eml` → stored email → documents → runs → cross-checks → shipment outcome →
+  draft → operator send → the outbox → the pending-shipments query view.
+
 ## Notes for the grader
 
 - **No login, local only.** The API binds to `127.0.0.1` only. It's not meant to be exposed
