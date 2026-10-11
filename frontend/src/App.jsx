@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createRun, getCustomers, listRuns, listShipments } from './api/api.js'
 import AskPanel from './components/AskPanel.jsx'
+import DemoInbox from './components/DemoInbox.jsx'
 import RunList from './components/RunList.jsx'
 import RunView from './components/RunView.jsx'
 import ShipmentList from './components/ShipmentList.jsx'
@@ -19,6 +20,7 @@ function App() {
   const [selectedRunId, setSelectedRunId] = useState(null)
   const [shipments, setShipments] = useState([])
   const [selectedShipmentId, setSelectedShipmentId] = useState(null)
+  const [watchForNewMailUntil, setWatchForNewMailUntil] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadError, setLoadError] = useState(null)
 
@@ -64,10 +66,20 @@ function App() {
     const hasProcessingShipment = shipments.some(
       (s) => s.review_state === 'pending_review' && s.outcome === null,
     )
-    if (!hasProcessingShipment) return
+    // Also keep checking for a short while after the demo button is clicked: the new email is
+    // not in the list until the watcher has picked it up, so "nothing is processing" is not yet
+    // a reason to stop looking.
+    const waitingForNewEmail = Date.now() < watchForNewMailUntil
+    if (!hasProcessingShipment && !waitingForNewEmail) return
     const timer = setTimeout(refreshShipments, 2000)
     return () => clearTimeout(timer)
-  }, [shipments, refreshShipments])
+  }, [shipments, refreshShipments, watchForNewMailUntil])
+
+  function handleDemoEmailSent() {
+    setWatchForNewMailUntil(Date.now() + 20000)
+    // The first look comes after the watcher's own 2s scan, then the effect above keeps going.
+    setTimeout(refreshShipments, 2500)
+  }
 
   async function handleStartRun({ file, customerId, rerun }) {
     setIsSubmitting(true)
@@ -110,6 +122,7 @@ function App() {
       {view === 'shipments' ? (
         <div className="layout">
           <div className="layout__sidebar">
+            <DemoInbox onSent={handleDemoEmailSent} />
             <section className="card" aria-labelledby="shipments-heading">
               <h2 id="shipments-heading">Shipments</h2>
               <ShipmentList

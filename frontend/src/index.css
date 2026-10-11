@@ -848,3 +848,42 @@ button:disabled {
   font-size: 0.85rem;
   color: #4a5261;
 }
+
+/* Demo-only "incoming email" panel (D9) */
+.demo-inbox {
+  border-style: dashed;
+}
+
+.demo-inbox h2 {
+  margin-top: 0;
+}
+
+.demo-inbox__tag {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.05rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #eceff2;
+  color: #4a5261;
+  border: 1px solid #d7dbe0;
+}
+
+.demo-inbox__note {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: #4a5261;
+}
+
+.demo-inbox__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.demo-inbox__status {
+  margin: 0.75rem 0 0;
+  font-weight: 600;
+  color: #1c6b32;
+}

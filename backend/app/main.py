@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.demo_routes import router as demo_router
 from app.api.routes import router as api_router
 from app.api.routes import startup_resume_incomplete_runs
 from app.api.shipment_routes import router as shipment_router
@@ -96,6 +97,7 @@ def sqlite3_connect_for_watcher(data_dir, filename: str):
 app = FastAPI(title="Trade Document Pipeline", version="0.1.0", lifespan=lifespan)
 app.include_router(api_router)
 app.include_router(shipment_router)
+app.include_router(demo_router)
 
 
 @app.get("/api/health")

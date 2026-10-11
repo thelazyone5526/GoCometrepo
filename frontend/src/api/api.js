@@ -161,3 +161,19 @@ export async function rerunDocument(shipmentId, documentId) {
 export function pageImageUrl(runId, pageIndex) {
   return `/api/runs/${encodeURIComponent(runId)}/pages/${pageIndex}`
 }
+
+// --- Demo only (D9 in docs/part2-decisions.md) ---------------------------------------------
+
+/**
+ * POST /api/demo/incoming-email — drops a fresh supplier email into the watched inbox folder,
+ * standing in for a real email arriving. `kind` is "clean" or "messy". The watcher does the rest.
+ */
+export async function simulateIncomingEmail(kind) {
+  return asJson(
+    await fetch('/api/demo/incoming-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind }),
+    }),
+  )
+}

@@ -21,3 +21,6 @@ frontend/dist/
 # OS clutter
 .DS_Store
 Thumbs.db
+
+# Emails created by the demo "Incoming email" button (D9)
+samples/inbox/demo-*.eml

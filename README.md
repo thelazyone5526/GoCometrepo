@@ -391,6 +391,15 @@ to the **Shipments** view with the toggle at the top, and the picked-up email ap
 list within a couple of seconds, moving from "N of M documents done" to its outcome as the
 pipeline finishes each attachment.
 
+**Demo shortcut: the "Incoming email" panel.** The Shipments view has a panel labelled "Demo
+only" with two buttons, a clean shipment and a shipment with problems. A click writes a brand-new
+supplier email (fresh Message-ID and `SHP-` reference, built from the sample PDFs) into the
+watched inbox folder, standing in for the supplier's email arriving. The watcher (`cli watch`
+must be running) then picks it up and the real pipeline runs, so the whole demo fits in one
+browser window. Each click leaves a `demo-*.eml` file in `samples/inbox/`; those are git-ignored.
+The endpoint behind it (`POST /api/demo/incoming-email`) has no login, like the rest of the API,
+and exists only for demos. See D9 in [`docs/part2-decisions.md`](docs/part2-decisions.md).
+
 ### The four screen states
 
 1. **Incoming and processing** — the shipment list: sender, subject, received time,

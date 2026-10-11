@@ -482,4 +482,5 @@ def test_openapi_schema_lists_every_endpoint(client) -> None:
         "/api/shipments/{shipment_id}/send",
         "/api/shipments/{shipment_id}/reviewed",
         "/api/shipments/{shipment_id}/documents/{document_id}/rerun",
+        "/api/demo/incoming-email",
     }

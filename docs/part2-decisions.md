@@ -202,3 +202,26 @@ that is said rather than invented.
   (replacing its private statement with the promoted repository call, no behaviour change) --
   flagged to the owner before doing it, per the "don't touch another task's file without
   flagging it first" rule.
+
+### D9. How a demo shows an email arriving in a single window
+
+- **Options considered**
+  - A: A "Simulate incoming email" panel in the Shipments view. One click on "Clean shipment" or
+    "Messy shipment" calls a new endpoint, `POST /api/demo/incoming-email`, which writes a fresh
+    `.eml` (new Message-ID, new `SHP-` reference, attachments copied from the committed sample
+    emails) into the watched inbox folder. The watcher then picks it up exactly as it would any
+    other file.
+  - B: A drop zone in the page that uploads a dragged `.eml` into the inbox folder.
+  - C: No code. Snap File Explorer and the browser side by side and drag a staged file by hand.
+- **Chosen**: A.
+- **Why**: the owner wants the whole demo in one window, and a click is the hardest thing to get
+  wrong on camera. B still needs a second window to drag from, so it does not remove the problem
+  and adds upload validation. C is free but fiddly. The assignment says to "mock the email
+  plumbing -- the logic is what matters", and A keeps everything after the file lands in the
+  inbox real: the same watcher, pipeline, cross-checks, decision and draft.
+- **Trade-off accepted**: on camera the trigger is a button standing in for the supplier's email,
+  not a real file arriving, so the video has to say so. The endpoint also has no login (the whole
+  API is localhost-only, no auth) and lets any caller create fake emails in the inbox. It takes
+  an enum, not a path, so it cannot write anywhere else. The panel is labelled "Demo only".
+- **Production note**: remove the endpoint. Real mail arrives from SES, Graph or IMAP, never from
+  a button.
