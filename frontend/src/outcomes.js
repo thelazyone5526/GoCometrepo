@@ -84,6 +84,17 @@ export function documentStatusMeta(doc) {
   return { label: 'Done', icon: '✓' }
 }
 
+// A field name as a person would write it: "hs_code" -> "HS code", "gross_weight" ->
+// "Gross weight". Used on the Part 2 shipment screen instead of CSS capitalisation, which turned
+// "hs code" into "Hs Code" and file names into "Bill-Of-Lading.Pdf".
+const FIELD_LABEL_OVERRIDES = { hs_code: 'HS code' }
+
+export function fieldLabel(name) {
+  if (FIELD_LABEL_OVERRIDES[name]) return FIELD_LABEL_OVERRIDES[name]
+  const spaced = (name ?? '').replaceAll('_', ' ')
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+}
+
 export const CROSS_CHECK_META = {
   consistent: { label: 'Consistent', icon: '✓' },
   inconsistent: { label: 'Inconsistent', icon: '✕' },

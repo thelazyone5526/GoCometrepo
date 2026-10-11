@@ -807,7 +807,6 @@ button:disabled {
 .problem-item__title {
   font-weight: 600;
   color: #a4160a;
-  text-transform: capitalize;
 }
 
 .problem-item__detail {
@@ -945,4 +944,45 @@ button:disabled {
 .link-button:hover {
   background: none;
   color: #143f94;
+}
+
+/* Shipment tables: keep file names as written and let them wrap, so the table fits the page
+   instead of running off the right edge. (The Part 1 field table keeps its own rules.) */
+.field-table--shipment th[scope='row'] {
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.field-table--shipment td {
+  overflow-wrap: anywhere;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* Keep verdicts and row buttons on one line, and the file name small under the field name. */
+.nowrap {
+  white-space: nowrap;
+}
+
+.table-button {
+  padding: 0.2rem 0.7rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.field-table__doc {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #4a5261;
+}
+
+.field-table--shipment th,
+.field-table--shipment td {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.92rem;
 }

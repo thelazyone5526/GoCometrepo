@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createRun, getCustomers, listRuns, listShipments } from './api/api.js'
 import AskPanel from './components/AskPanel.jsx'
 import DemoInbox from './components/DemoInbox.jsx'
@@ -21,6 +21,10 @@ function App() {
   const [shipments, setShipments] = useState([])
   const [selectedShipmentId, setSelectedShipmentId] = useState(null)
   const [watchForNewMailUntil, setWatchForNewMailUntil] = useState(0)
+  // The reference of the demo email just "sent", so that shipment can be opened automatically
+  // the moment it shows up in the list (D9). A ref, not state: it is read inside the fetch
+  // callback and changing it should not re-render anything on its own.
+  const pendingDemoReference = useRef(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadError, setLoadError] = useState(null)
 
@@ -37,6 +41,11 @@ function App() {
     try {
       const data = await listShipments()
       setShipments(data)
+      const arrived = data.find((s) => s.reference === pendingDemoReference.current)
+      if (arrived) {
+        setSelectedShipmentId(arrived.shipment_id)
+        pendingDemoReference.current = null
+      }
     } catch (err) {
       setLoadError(err.message)
     }
@@ -75,7 +84,8 @@ function App() {
     return () => clearTimeout(timer)
   }, [shipments, refreshShipments, watchForNewMailUntil])
 
-  function handleDemoEmailSent() {
+  function handleDemoEmailSent(result) {
+    pendingDemoReference.current = result.reference
     setWatchForNewMailUntil(Date.now() + 20000)
     // The first look comes after the watcher's own 2s scan, then the effect above keeps going.
     setTimeout(refreshShipments, 2500)

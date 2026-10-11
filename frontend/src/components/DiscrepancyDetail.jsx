@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { pageImageUrl } from '../api/api.js'
-import { verdictMeta } from '../outcomes.js'
+import { fieldLabel, verdictMeta } from '../outcomes.js'
 
 // Part 2 screen state 3 (requirements 10.1-10.4): the detail behind one flagged field or
 // cross-document discrepancy, or the reason behind one uncertain item. `item` is one of:
@@ -43,7 +43,7 @@ function FieldDetail({ field, runId }) {
         </div>
         <div>
           <dt>Field</dt>
-          <dd>{field.field_name.replaceAll('_', ' ')}</dd>
+          <dd>{fieldLabel(field.field_name)}</dd>
         </div>
         <div>
           <dt>Verdict</dt>
@@ -124,7 +124,7 @@ function FieldDetail({ field, runId }) {
 function CrossCheckDetail({ check }) {
   return (
     <div>
-      <h3>{check.field_name.replaceAll('_', ' ')} — across documents</h3>
+      <h3>{fieldLabel(check.field_name)} — across documents</h3>
       <p>{check.reason}</p>
       <table className="field-table">
         <thead>

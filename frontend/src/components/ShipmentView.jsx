@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getShipment } from '../api/api.js'
-import { reviewStateLabel, shipmentOutcomeLabel } from '../outcomes.js'
+import { fieldLabel, reviewStateLabel, shipmentOutcomeLabel } from '../outcomes.js'
 import CrossCheckTable from './CrossCheckTable.jsx'
 import DiscrepancyDetail from './DiscrepancyDetail.jsx'
 import DraftPanel from './DraftPanel.jsx'
@@ -37,7 +37,7 @@ function buildProblems(shipment) {
     if (f.verdict === 'mismatch') {
       problems.push({
         key: `field-${f.document_id}-${f.field_name}`,
-        title: `${f.field_name.replaceAll('_', ' ')} — ${f.filename}`,
+        title: `${fieldLabel(f.field_name)} — ${f.filename}`,
         detail: `found “${f.found ?? f.value ?? '—'}”, expected “${f.expected ?? '—'}”`,
         openItem: { type: 'field', field: f, runId: null },
         documentId: f.document_id,
@@ -48,7 +48,7 @@ function buildProblems(shipment) {
     if (c.result === 'inconsistent') {
       problems.push({
         key: `cross-${c.field_name}`,
-        title: `${c.field_name.replaceAll('_', ' ')} differs between documents`,
+        title: `${fieldLabel(c.field_name)} differs between documents`,
         detail: c.compared.map((r) => `${r.filename}: “${r.value ?? '(none)'}”`).join('   ·   '),
         openItem: { type: 'cross_check', check: c },
         documentId: null,

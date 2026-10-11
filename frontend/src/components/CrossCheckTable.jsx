@@ -1,4 +1,4 @@
-import { crossCheckMeta } from '../outcomes.js'
+import { crossCheckMeta, fieldLabel } from '../outcomes.js'
 
 // Reuses the field-table's match/mismatch colour classes (verdict-cell--*) rather than
 // defining a parallel set for cross-checks, since "consistent" and "inconsistent" read the
@@ -22,7 +22,7 @@ function CrossCheckTable({ crossChecks, onOpenCheck }) {
   const clickable = typeof onOpenCheck === 'function'
 
   return (
-    <table className="field-table">
+    <table className="field-table field-table--shipment">
       <caption className="visually-hidden">Cross-document checks</caption>
       <thead>
         <tr>
@@ -37,7 +37,7 @@ function CrossCheckTable({ crossChecks, onOpenCheck }) {
           const { label, icon } = crossCheckMeta(check.result)
           return (
             <tr key={check.field_name}>
-              <th scope="row">{check.field_name.replaceAll('_', ' ')}</th>
+              <th scope="row">{fieldLabel(check.field_name)}</th>
               <td
                 className={`verdict-cell verdict-cell--${RESULT_TO_VERDICT_CLASS[check.result] ?? check.result}`}
               >
@@ -59,7 +59,11 @@ function CrossCheckTable({ crossChecks, onOpenCheck }) {
               {clickable && (
                 <td>
                   {check.result === 'inconsistent' && (
-                    <button type="button" onClick={() => onOpenCheck(check)}>
+                    <button
+                      type="button"
+                      className="table-button"
+                      onClick={() => onOpenCheck(check)}
+                    >
                       View
                     </button>
                   )}

@@ -16,7 +16,7 @@ function DemoInbox({ onSent }) {
     try {
       const result = await simulateIncomingEmail(kind)
       setMessage(`Email ${result.reference} arrived in the inbox.`)
-      onSent()
+      onSent(result)
     } catch (err) {
       setError(err.message)
     } finally {
