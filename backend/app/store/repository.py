@@ -674,7 +674,8 @@ def list_shipment_documents(conn: sqlite3.Connection, shipment_id: str) -> list[
         """
         SELECT sd.*, d.filename, d.stored_path, d.file_hash, d.page_count,
                r.status AS run_status, r.outcome AS run_outcome,
-               r.escalation_reason AS run_escalation_reason
+               r.escalation_reason AS run_escalation_reason,
+               r.current_step AS run_current_step
         FROM shipment_documents sd
         JOIN documents d ON d.id = sd.document_id
         LEFT JOIN runs r ON r.id = sd.run_id

@@ -887,3 +887,62 @@ button:disabled {
   font-weight: 600;
   color: #1c6b32;
 }
+
+/* Pipeline steps on the shipment screen (D10) */
+.progress-steps--shipment {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
+}
+
+.pipeline-docs {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pipeline-docs__item {
+  border: 1px solid #d7dbe0;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  background: #fff;
+}
+
+.pipeline-docs__item .progress-steps {
+  margin: 0.4rem 0;
+  flex-wrap: wrap;
+}
+
+.pipeline-docs__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.pipeline-docs__name {
+  font-weight: 600;
+}
+
+.pipeline-docs__type {
+  font-size: 0.8rem;
+  color: #4a5261;
+  text-transform: capitalize;
+}
+
+/* A button that reads as a link: used for "Open pipeline run" and "Back to shipment". */
+.link-button {
+  background: none;
+  border: none;
+  padding: 0.15rem 0;
+  color: #1a56c4;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  background: none;
+  color: #143f94;
+}

@@ -54,19 +54,30 @@ def _checkpoint_connection():
     return sqlite3.connect(base / CHECKPOINTS_FILENAME, check_same_thread=False)
 
 
-def _documents_done_total(conn, shipment_id: str) -> tuple[int, int]:
-    rows = [
+def _documents_done_total(conn, shipment) -> tuple[int, int]:
+    """`(finished, expected)` for "N of M documents done".
+
+    M comes from the email's own attachment count (recorded before any processing starts, R1.2),
+    less any attachment rejected so far, and never from "documents registered so far": those are
+    added one at a time as each run finishes, so counting them would show "1 of 1" while two more
+    files are still waiting."""
+    if shipment["review_state"] == "failed":
+        return 0, 0
+    own_rows = [
         row
-        for row in repo.list_shipment_documents(conn, shipment_id)
+        for row in repo.list_shipment_documents(conn, shipment["shipment_id"])
         if row["origin"] == "own_email"
     ]
-    total = len(rows)
-    done = sum(1 for row in rows if row["run_id"] is None or row["run_status"] == "completed")
+    rejected = sum(
+        1 for a in repo.list_attachments(conn, shipment["email_id"]) if a["status"] == "rejected"
+    )
+    total = max(shipment["attachment_count"] - rejected, len(own_rows))
+    done = sum(1 for row in own_rows if row["run_id"] is None or row["run_status"] == "completed")
     return done, total
 
 
 def _shipment_summary(conn, row) -> ShipmentSummaryOut:
-    done, total = _documents_done_total(conn, row["shipment_id"])
+    done, total = _documents_done_total(conn, row)
     return ShipmentSummaryOut(
         shipment_id=row["shipment_id"],
         customer_id=row["customer_id"],
@@ -119,6 +130,7 @@ def _document_status(row) -> DocumentStatusOut:
         source_cycle=row["source_cycle"],
         run_id=row["run_id"],
         run_status=run_status if row["run_id"] else "waiting",
+        run_current_step=row["run_current_step"] if row["run_id"] else None,
         run_outcome=row["run_outcome"],
         run_escalation_reason=row["run_escalation_reason"],
     )
@@ -129,6 +141,7 @@ def _shipment_detail(conn, shipment_id: str) -> ShipmentDetailOut | None:
     if shipment is None:
         return None
 
+    done, total = _documents_done_total(conn, shipment)
     effective_rows = repo.list_shipment_documents(conn, shipment_id)
     documents = [_document_status(row) for row in effective_rows]
 
@@ -212,6 +225,9 @@ def _shipment_detail(conn, shipment_id: str) -> ShipmentDetailOut | None:
         cross_checks=cross_checks,
         attachments=attachments,
         uncertain_items=uncertain_items,
+        documents_done=done,
+        documents_total=total,
+        attachment_filenames=json.loads(shipment["attachment_filenames"] or "[]"),
     )
 
 

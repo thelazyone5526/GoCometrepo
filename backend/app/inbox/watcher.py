@@ -227,6 +227,24 @@ def _process_email(
         assert document_id is not None  # accepted outcomes always carry a document id
         stored_path = _stored_path_for(conn, document_id)
         run_id = repo.new_id()
+
+        def register_while_running(document_id: str = document_id, run_id: str = run_id) -> None:
+            # Attach the document to the shipment the moment its run starts, not when it ends,
+            # so the screen can show which pipeline step it is on. The doc type is not known
+            # until the Extractor has run, so it is filled in below. The shipment is not judged
+            # until every document's run has finished (`all_own_documents_finished`), so a
+            # document that is registered but still running cannot cause an early decision.
+            repo.add_shipment_document(
+                conn,
+                shipment_id=shipment_id,
+                document_id=document_id,
+                run_id=run_id,
+                doc_type=None,
+                origin="own_email",
+                source_shipment_id=None,
+                source_cycle=None,
+            )
+
         final_state = run_document(
             file_path=stored_path,
             customer_id=parts.customer_id,
@@ -234,18 +252,16 @@ def _process_email(
             checkpointer=checkpointer,
             document_id=document_id,
             run_id=run_id,
+            on_run_created=register_while_running,
         )
         doc_type = document_type_from_state(final_state)
         repo.update_document_doc_type(conn, document_id=document_id, doc_type=doc_type)
-        repo.add_shipment_document(
+        repo.update_shipment_document_run(
             conn,
             shipment_id=shipment_id,
             document_id=document_id,
             run_id=run_id,
             doc_type=doc_type,
-            origin="own_email",
-            source_shipment_id=None,
-            source_cycle=None,
         )
 
     build_effective_set(conn, shipment_id)

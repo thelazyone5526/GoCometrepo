@@ -370,6 +370,8 @@ def test_get_shipment_detail_includes_every_field_and_cross_check(client, conn) 
     }
     assert all(cc["result"] == "consistent" for cc in body["cross_checks"])
     assert body["uncertain_items"] == []
+    # D10: every finished document reports the last pipeline step it reached
+    assert {d["run_current_step"] for d in body["documents"]} == {"persist"}
 
 
 def test_get_shipment_detail_on_the_messy_shipment_shows_the_consignee_discrepancy(
@@ -428,6 +430,9 @@ def test_shipment_still_processing_has_no_outcome_yet(client, conn) -> None:
     body = response.json()
     assert body["outcome"] is None
     assert response.status_code == 200
+    # D10: the screen shows which Part 1 pipeline step each document is on
+    assert body["documents"][0]["run_status"] == "processing"
+    assert body["documents"][0]["run_current_step"] == "prepare"
 
     list_response = client.get("/api/shipments")
     list_row = list_response.json()[0]
@@ -566,3 +571,65 @@ def test_reviewed_without_send_sets_review_state_and_sends_nothing(client, conn)
 
     draft_response = client.get(f"/api/shipments/{shipment_id}/draft")
     assert draft_response.json()["sent"] is False
+
+
+def test_a_shipment_is_not_decided_until_every_attachment_has_been_handled(client, conn) -> None:
+    """The watcher registers a document only when its run finishes, one after another. With three
+    attachments and only the invoice done, the shipment must stay undecided -- a lone invoice that
+    matches every rule would otherwise read "recommended for approval" before the bill of lading
+    has been opened. The "N of M" count must also say M = 3, not "1 of 1"."""
+    names = ["invoice.pdf", "bol.pdf", "packing.pdf"]
+    email_id = repo.record_email(
+        conn,
+        message_id="<three-attachments@su.example>",
+        eml_path="inbox/three.eml",
+        sender="ops@su.example",
+        subject="SHP-5509 acme documents",
+        received_at="2026-10-10T09:00:00+00:00",
+        attachment_count=3,
+        attachment_filenames=names,
+    )
+    shipment_id = _seed_shipment(conn, email_id=email_id, reference="SHP-5509")
+
+    _seed_document_with_run(
+        conn,
+        shipment_id=shipment_id,
+        email_id=email_id,
+        filename="invoice.pdf",
+        file_hash="h-3-inv",
+        doc_type="commercial_invoice",
+        fields=_CLEAN_INVOICE_FIELDS,
+    )
+
+    early = client.get(f"/api/shipments/{shipment_id}").json()
+    assert early["outcome"] is None
+    assert (early["documents_done"], early["documents_total"]) == (1, 3)
+    assert early["attachment_filenames"] == names
+    assert client.get(f"/api/shipments/{shipment_id}/draft").status_code == 404
+    listed = next(s for s in client.get("/api/shipments").json() if s["reference"] == "SHP-5509")
+    assert listed["outcome"] is None
+    assert (listed["documents_done"], listed["documents_total"]) == (1, 3)
+
+    _seed_document_with_run(
+        conn,
+        shipment_id=shipment_id,
+        email_id=email_id,
+        filename="bol.pdf",
+        file_hash="h-3-bol",
+        doc_type="bill_of_lading",
+        fields=_CLEAN_BOL_FIELDS,
+    )
+    assert client.get(f"/api/shipments/{shipment_id}").json()["outcome"] is None
+
+    _seed_document_with_run(
+        conn,
+        shipment_id=shipment_id,
+        email_id=email_id,
+        filename="packing.pdf",
+        file_hash="h-3-pack",
+        doc_type="packing_list",
+        fields=_CLEAN_PACKING_FIELDS,
+    )
+    done = client.get(f"/api/shipments/{shipment_id}").json()
+    assert done["outcome"] == "auto_approve"
+    assert (done["documents_done"], done["documents_total"]) == (3, 3)

@@ -9,6 +9,7 @@ run's row in `app.db`, builds a fresh graph with a SQLite checkpointer, and invo
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -100,11 +101,19 @@ def run_document(
     checkpointer: Any,
     document_id: str,
     run_id: str,
+    on_run_created: Callable[[], None] | None = None,
 ) -> dict[str, Any]:
     """Start one run from scratch. The caller (the CLI's `run` command) is responsible for
     the duplicate-upload check and creating the `shipments`/`documents` rows first -- this
-    function only creates the `runs` row and drives the graph."""
+    function only creates the `runs` row and drives the graph.
+
+    `on_run_created`, when given, is called once, right after the `runs` row exists and before
+    the first node runs. Part 2's inbox watcher uses it to attach the document to its shipment
+    while the run is still in flight, so the screen can show which pipeline step it is on. It
+    defaults to doing nothing, so every existing caller behaves exactly as before."""
     repo.create_run(conn, run_id=run_id, document_id=document_id)
+    if on_run_created is not None:
+        on_run_created()
     recorder = _live_recorder(conn)
     graph = build_graph(conn=conn, recorder=recorder, checkpointer=checkpointer)
 

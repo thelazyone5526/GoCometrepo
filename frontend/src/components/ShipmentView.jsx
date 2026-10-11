@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import { getShipment } from '../api/api.js'
-import { documentStatusMeta, reviewStateLabel, shipmentOutcomeLabel } from '../outcomes.js'
+import { reviewStateLabel, shipmentOutcomeLabel } from '../outcomes.js'
 import CrossCheckTable from './CrossCheckTable.jsx'
 import DiscrepancyDetail from './DiscrepancyDetail.jsx'
 import DraftPanel from './DraftPanel.jsx'
+import PipelineDocuments from './PipelineDocuments.jsx'
+import RunView from './RunView.jsx'
 import ShipmentFieldTable from './ShipmentFieldTable.jsx'
+import ShipmentSteps from './ShipmentSteps.jsx'
 
 const POLL_INTERVAL_MS = 2000
 
@@ -62,6 +65,8 @@ function ShipmentView({ shipmentId }) {
   const [shipment, setShipment] = useState(null)
   const [error, setError] = useState(null)
   const [openDetail, setOpenDetail] = useState(null)
+  // Part 1's own run screen for one document, opened from "Open pipeline run" (D10).
+  const [openRunId, setOpenRunId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -88,6 +93,17 @@ function ShipmentView({ shipmentId }) {
       if (timer) clearTimeout(timer)
     }
   }, [shipmentId])
+
+  if (openRunId) {
+    return (
+      <div className="run-view">
+        <button type="button" className="link-button" onClick={() => setOpenRunId(null)}>
+          ‹ Back to shipment
+        </button>
+        <RunView key={openRunId} runId={openRunId} />
+      </div>
+    )
+  }
 
   if (error) {
     return (
@@ -118,29 +134,43 @@ function ShipmentView({ shipmentId }) {
   }
 
   if (isStillProcessing(shipment)) {
-    const own = shipment.documents.filter((doc) => doc.origin === 'own_email')
-    const doneCount = own.filter(
-      (doc) => doc.run_status !== 'processing' && doc.run_status !== 'waiting',
-    ).length
+    // Every file the email carried, in order. Documents are registered one at a time as each
+    // finishes, so a file the pipeline has not reached yet has no document row: show it as
+    // "waiting" rather than leaving it out. A file that was rejected (wrong type, too big) never
+    // becomes a document and is listed under "Attachments not processed" instead.
+    const rejectedNames = new Set(
+      shipment.attachments.filter((a) => a.status === 'rejected').map((a) => a.filename),
+    )
+    const own = shipment.attachment_filenames
+      .filter((name) => !rejectedNames.has(name))
+      .map(
+        (name) =>
+          shipment.documents.find((doc) => doc.origin === 'own_email' && doc.filename === name) ?? {
+            document_id: `waiting-${name}`,
+            filename: name,
+            doc_type: null,
+            origin: 'own_email',
+            source_cycle: null,
+            run_id: null,
+            run_status: 'waiting',
+            run_current_step: null,
+            run_outcome: null,
+            run_escalation_reason: null,
+          },
+      )
+    const doneCount = shipment.documents_done
+    const totalCount = shipment.documents_total
     return (
       <div className="run-view">
         <section className="status-banner status-banner--processing">
           <p className="status-banner__eyebrow">{shipment.subject || '(no subject)'}</p>
           <h2 className="status-banner__outcome">Checking documents…</h2>
           <p className="status-banner__guidance" role="status" aria-live="polite">
-            {doneCount} of {own.length} documents done
+            {doneCount} of {totalCount} documents done
           </p>
         </section>
-        <ul className="document-progress-list">
-          {own.map((doc) => {
-            const { label, icon } = documentStatusMeta(doc)
-            return (
-              <li key={doc.document_id}>
-                <span aria-hidden="true">{icon}</span> {doc.filename}: {label}
-              </li>
-            )
-          })}
-        </ul>
+        <ShipmentSteps documentsDone={doneCount} documentsTotal={totalCount} decided={false} />
+        <PipelineDocuments documents={own} onOpenRun={setOpenRunId} />
       </div>
     )
   }
@@ -299,6 +329,20 @@ function ShipmentView({ shipmentId }) {
       </details>
 
       <DraftPanel shipment={shipment} />
+
+      <details className="card details-card">
+        <summary className="details-card__summary">How this was checked (pipeline steps)</summary>
+        <p className="details-card__hint">
+          Each document went through Part 1’s pipeline. Open a run to see its reasoning and the
+          model calls behind it.
+        </p>
+        <ShipmentSteps
+          documentsDone={shipment.documents_done}
+          documentsTotal={shipment.documents_total}
+          decided
+        />
+        <PipelineDocuments documents={shipment.documents} onOpenRun={setOpenRunId} />
+      </details>
     </div>
   )
 }

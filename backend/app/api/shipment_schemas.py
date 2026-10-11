@@ -20,6 +20,9 @@ class DocumentStatusOut(BaseModel):
     source_cycle: int | None
     run_id: str | None
     run_status: str | None  # waiting (no run yet), processing, completed
+    # Which Part 1 pipeline step the run is on: prepare, extract, validate, route, persist
+    # (D10); None until a run exists.
+    run_current_step: str | None = None
     run_outcome: str | None
     run_escalation_reason: str | None
 
@@ -109,6 +112,12 @@ class ShipmentDetailOut(BaseModel):
     cross_checks: list[CrossCheckOut]
     attachments: list[AttachmentOut]
     uncertain_items: list[str]
+    # How many documents the email carried, and their file names as they arrived (recorded
+    # before processing starts). Lets the screen list every expected file, including those the
+    # pipeline has not reached yet, instead of only the ones finished so far (D10).
+    documents_done: int = 0
+    documents_total: int = 0
+    attachment_filenames: list[str] = []
 
 
 class DraftOut(BaseModel):

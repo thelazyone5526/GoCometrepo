@@ -225,3 +225,44 @@ that is said rather than invented.
   an enum, not a path, so it cannot write anywhere else. The panel is labelled "Demo only".
 - **Production note**: remove the endpoint. Real mail arrives from SES, Graph or IMAP, never from
   a button.
+
+### D10. How the shipment screen shows the pipeline steps
+
+- **Options considered**
+  - A: A live step tracker per document (Prepare, Extract, Validate, Route, reusing Part 1's
+    `ProgressSteps`) plus the shipment-level stages (email received, documents checked,
+    cross-check, decision, reply drafted). Needs the document status payload to carry each run's
+    `current_step`.
+  - B: One overall progress line only, derived from data already in the payload.
+  - C: An "Open pipeline run" link on each document that opens Part 1's existing run screen
+    (steps, reasoning, field table, LLM call log).
+- **Chosen**: A and C together.
+- **Why**: the assignment's point for Part 2 is that Part 1's agents are connected to a real
+  workflow, not rebuilt. The shipment screen only showed "N of M documents done", so nothing on it
+  showed that Part 1's pipeline is what runs inside. A shows every step live while an email is
+  processed; C lets the operator drill into Part 1's full detail for any document. B was dropped
+  because it would still hide Part 1's steps.
+- **Trade-off accepted**: the payload gains one field (`run_current_step`), added to the existing
+  query as one more selected column; no Part 1 table, route or behaviour changes. The three
+  shipment-level stages (cross-check, decision, draft) run in code in well under a second, right
+  after the last document finishes (they are triggered on read, D7), so on screen they tick almost
+  at once rather than showing a visible wait.
+
+**D10 follow-up: two bugs found by watching a live run, and the one Part 1 touch.**
+
+- *Premature decision.* Documents were attached to a shipment only after their run finished, one
+  at a time, so after the first document "every document is finished" was true and the shipment
+  was decided on a third of its papers (a lone matching invoice reads "recommended for approval").
+  Fixed: `all_own_documents_finished` now also requires that every attachment of the email has been
+  handled (the email's `attachment_count` is recorded up front) and that every attachment that
+  became a document is registered. "N of M documents done" now takes M from the email, not from
+  documents seen so far.
+- *Invisible steps.* Because a document was registered only at the end, the screen could never see
+  the Part 1 step it was on. The watcher now registers it as soon as its run starts.
+- *The Part 1 touch.* That needed `run_document` (`graph/build.py`) to accept an optional
+  `on_run_created` callback, called once right after the run row exists. It defaults to `None` and
+  does nothing, so the CLI, the upload route and every test behave exactly as before. Flagged to the
+  owner because the rules say Part 1 is not to change without asking; this changes no behaviour.
+- *Known edge.* If the process dies mid-run, the document is now already attached with no doc type
+  (before, it was not attached at all), so after a resume it reads as "document type could not be
+  determined" and the shipment goes to human review rather than waiting forever. Safer, and visible.

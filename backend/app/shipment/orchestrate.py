@@ -42,8 +42,33 @@ def all_own_documents_finished(conn: sqlite3.Connection, shipment_id: str) -> bo
     shipment) has nothing to wait for either: the document it reuses already has its own
     finished run from whichever shipment first processed it, which is what the effective set
     actually carries forward. Only a row with a real `run_id` whose run is still `processing`
-    blocks the shipment."""
+    blocks the shipment.
+
+    "Every document" has to mean every document the email *carried*, not every document
+    registered so far. The watcher registers a document only once its pipeline run has finished,
+    one after another, so while document 2 of 3 is still being read the shipment has exactly one
+    registered, finished document. Judging it then would decide the shipment on a third of its
+    papers -- and a lone invoice that matches every rule reads "recommended for approval" before
+    the bill of lading has even been opened. So the shipment waits until ingestion is complete:
+    every attachment of the email has been handled (the email's `attachment_count` is recorded
+    up front, R1.2) and every attachment that became a document has been registered."""
+    shipment = repo.get_shipment(conn, shipment_id)
+    if shipment is None:
+        return False
+
+    attachments = repo.list_attachments(conn, shipment["email_id"])
+    if len(attachments) < shipment["attachment_count"]:
+        return False
+
     own_rows = _own_email_rows(conn, shipment_id)
+    registered = {row["document_id"] for row in own_rows}
+    expected = {
+        a["document_id"]
+        for a in attachments
+        if a["status"] in ("accepted", "duplicate") and a["document_id"] is not None
+    }
+    if not expected <= registered:
+        return False
     if not own_rows:
         return False
     for row in own_rows:
