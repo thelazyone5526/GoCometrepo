@@ -114,6 +114,9 @@ function App() {
         >
           Shipments
         </button>
+        <button type="button" aria-pressed={view === 'ask'} onClick={() => setView('ask')}>
+          Ask a question
+        </button>
         <button
           type="button"
           aria-pressed={view === 'single-document'}
@@ -129,7 +132,11 @@ function App() {
         </p>
       )}
 
-      {view === 'shipments' ? (
+      {view === 'ask' ? (
+        // Its own tab so an operator on the shipment screen can find it; the Part 1
+        // single-document screen keeps its own copy of the box, unchanged.
+        <AskPanel />
+      ) : view === 'shipments' ? (
         <div className="layout">
           <div className="layout__sidebar">
             <DemoInbox onSent={handleDemoEmailSent} />

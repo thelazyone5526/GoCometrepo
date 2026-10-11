@@ -1,5 +1,40 @@
 import { useState } from 'react'
 import { postQuery } from '../api/api.js'
+import { OUTCOME_LABELS, SHIPMENT_OUTCOME_LABELS, reviewStateLabel } from '../outcomes.js'
+
+// Readable column headings and values for the answer table. Only columns we know get a nicer
+// label; anything else is shown exactly as the query returned it.
+const COLUMN_LABELS = {
+  shipment_reference: 'Shipment',
+  customer_id: 'Customer ID',
+  customer_name: 'Customer',
+  subject: 'Subject',
+  received_at: 'Received',
+  cycle_number: 'Round',
+  document_count: 'Documents',
+  outcome: 'Outcome',
+  discrepancy_count: 'To fix',
+  uncertain_count: 'To check',
+  review_state: 'Status',
+  decided_at: 'Decided',
+}
+
+function columnLabel(column) {
+  return COLUMN_LABELS[column] ?? column
+}
+
+function cellText(column, value) {
+  if (value === null || value === undefined) return '—'
+  if (column === 'outcome') {
+    return SHIPMENT_OUTCOME_LABELS[value] ?? OUTCOME_LABELS[value] ?? String(value)
+  }
+  if (column === 'review_state') return reviewStateLabel(value)
+  if (column.endsWith('_at')) {
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString()
+  }
+  return String(value)
+}
 
 const EXAMPLE_QUESTIONS = [
   'How many documents were flagged for review this week?',
@@ -49,9 +84,8 @@ function AskPanel() {
     <section className="card" aria-labelledby="ask-heading">
       <h2 id="ask-heading">Ask a question</h2>
       <p>
-        Ask about the stored runs in plain English — e.g. "how many shipments were flagged
-        this week?" This calls Gemini to write a read-only query, so each question spends one
-        real LLM call.
+        Ask about your shipments in plain English. The exact query behind every answer is shown
+        under it.
       </p>
 
       <form onSubmit={handleSubmit}>
@@ -104,7 +138,7 @@ function AskPanel() {
                 <tr>
                   {result.columns.map((col) => (
                     <th scope="col" key={col}>
-                      {col}
+                      {columnLabel(col)}
                     </th>
                   ))}
                 </tr>
@@ -113,7 +147,7 @@ function AskPanel() {
                 {result.rows.map((row, rowIndex) => (
                   <tr key={rowIndex}>
                     {row.map((cell, cellIndex) => (
-                      <td key={cellIndex}>{cell === null ? '—' : String(cell)}</td>
+                      <td key={cellIndex}>{cellText(result.columns[cellIndex], cell)}</td>
                     ))}
                   </tr>
                 ))}
