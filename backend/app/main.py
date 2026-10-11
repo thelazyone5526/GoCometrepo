@@ -58,18 +58,26 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         from app.inbox.watcher import watch_loop
         from app.store.db import connect
 
-        conn = connect()
-        checkpoint_conn = sqlite3_connect_for_watcher(settings.data_dir, CHECKPOINTS_FILENAME)
-        checkpointer = SqliteSaver(checkpoint_conn)
+        def _run_watcher() -> None:
+            # `store/db.py::connect` must be called on the same thread that uses the
+            # resulting connection (design section 9: "one connection per thread"). Opening
+            # it here, inside the thread's own target function, rather than before
+            # `Thread(...)` is constructed, is what satisfies that -- opening it in the
+            # lifespan coroutine's thread and handing it to this thread raised
+            # "SQLite objects created in a thread can only be used in that same thread."
+            conn = connect()
+            checkpoint_conn = sqlite3_connect_for_watcher(settings.data_dir, CHECKPOINTS_FILENAME)
+            checkpointer = SqliteSaver(checkpoint_conn)
+            watch_loop(
+                conn=conn,
+                checkpointer=checkpointer,
+                inbox_dir=Path(DEFAULT_INBOX_DIR),
+                stop_event=stop_event,
+            )
+
         stop_event = threading.Event()
         watcher_thread = threading.Thread(
-            target=watch_loop,
-            kwargs={
-                "conn": conn,
-                "checkpointer": checkpointer,
-                "inbox_dir": Path(DEFAULT_INBOX_DIR),
-                "stop_event": stop_event,
-            },
+            target=_run_watcher,
             daemon=True,
             name="inbox-watcher",
         )

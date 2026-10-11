@@ -84,6 +84,15 @@ function App() {
     return () => clearTimeout(timer)
   }, [shipments, refreshShipments, watchForNewMailUntil])
 
+  // An email can also arrive without the demo button (a file dropped into the inbox folder by
+  // hand), and nothing above would notice. While the Shipments view is open, look for new
+  // mail every 3s so the list picks it up on its own.
+  useEffect(() => {
+    if (view !== 'shipments') return
+    const timer = setInterval(refreshShipments, 3000)
+    return () => clearInterval(timer)
+  }, [view, refreshShipments])
+
   function handleDemoEmailSent(result) {
     pendingDemoReference.current = result.reference
     setWatchForNewMailUntil(Date.now() + 20000)
