@@ -242,10 +242,11 @@ function ShipmentView({ shipmentId }) {
         </section>
       )}
 
-      <DraftPanel shipment={shipment} />
-
-      <details className="card details-card">
-        <summary className="details-card__summary">Full field-by-field breakdown</summary>
+      {/* Open by default: the assignment's "verification result" state is the field-by-field
+          view (what matched, what didn't, confidence per field), so it must be visible without
+          a click. It still sits below the plain-language summary above, and above the draft. */}
+      <details className="card details-card" open>
+        <summary className="details-card__summary">Field-by-field results</summary>
         <p className="details-card__hint">
           Documents received: {docTypesPresent.length > 0 ? docTypesPresent.join(', ') : 'none'}
           {' · '}status: {reviewStateLabel(shipment.review_state)}
@@ -296,6 +297,8 @@ function ShipmentView({ shipmentId }) {
           </>
         )}
       </details>
+
+      <DraftPanel shipment={shipment} />
     </div>
   )
 }
